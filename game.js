@@ -10,17 +10,21 @@ function starterDeck(){return shuffle(CARDS.flatMap(c=>Array(c.rarity==="傳說"
 function render(){
   if(S.screen==="home") return home();
   if(S.screen==="select") return select();
+  if(S.screen==="reveal") return reveal();
   return battle();
 }
 function home(){app.innerHTML=`<main class="screen home">
   <div class="brand"><h1>神話爭鋒</h1><small>MYTHIC CLASH · CARD BATTLE</small></div>
   <p class="subtitle">諸神、英雄、妖魔與命運，在一場牌局中決定勝負。</p>
-  <button class="cta" onclick="goSelect()">開始戰鬥</button>
+  <button class="cta" onclick="randomStart()">隨機抽取角色</button><button class="ghost" onclick="goSelect()">瀏覽全部30名角色</button>
   <div class="panel" style="padding:18px;text-align:center;max-width:680px">
     <b>目前原型規則</b><p class="small">30名角色・50張功能牌・神力資源・AI對手・疲勞機制。角色立繪可在 assets/characters/ 替換，牌框與UI會保留目前的東方神話華麗風格。</p>
   </div>
 </main>`}
 function goSelect(){S.screen="select";render()}
+function randomStart(){startGame(shuffle(CHARACTERS)[0].id)}
+function reveal(){let c=S.player;app.innerHTML=`<main class="screen home"><div class="brand" style="font-size:25px">✦ 命運揭示 ✦</div><div class="flip-card" style="--c1:${c.c1};--c2:${c.c2}"><span class="reveal-icon">${c.emoji}</span><b>${c.name}</b><span>❤️ ${c.hp}　⚡ ${c.skillCost}</span><p>${c.desc}</p></div><p>你的對手：${S.enemy.name}</p><button class="cta" onclick="S.screen='battle';render()">進入戰場</button></main>`}
+function showFx(kind,label){const layer=document.createElement("div");layer.className="fx-layer";layer.innerHTML=`<div class="fx-burst ${kind}">${esc(label)}</div>`;document.body.appendChild(layer);if(kind==="attack"||kind==="skill"){document.querySelector(".board")?.classList.add("screen-shake");setTimeout(()=>document.querySelector(".board")?.classList.remove("screen-shake"),380)}setTimeout(()=>layer.remove(),950)}
 function select(){app.innerHTML=`<main class="screen"><div class="toolbar" style="width:min(1180px,100%)"><div><div class="brand" style="text-align:left;font-size:24px">選擇你的神話角色</div><div class="small">角色決定你的被動與主動技能，功能牌決定你的戰術。</div></div><button onclick="S.screen='home';render()">返回</button></div>
 <div class="panel roster">${CHARACTERS.map(c=>`<article class="char-card" onclick="startGame('${c.id}')" style="--c1:${c.c1};--c2:${c.c2}">
 <div class="char-art">${c.emoji}</div><div class="char-info"><b>${c.name}</b><span>HP ${c.hp}</span><div class="tag">${c.origin} · ${c.tag}</div><p class="small">${c.desc}</p></div></article>`).join("")}</div></main>`}
@@ -32,7 +36,7 @@ function startGame(id){
   for(let i=0;i<5;i++){drawPlayer();drawEnemy()}
   S.turn=1;S.phase="player";S.mana=3;S.enemyMana=3;S.skillCooldown=0;S.enemySkillCooldown=0;S.usedThisTurn=false;S.playerUsedSkill=false;S.enemyUsedSkill=false;S.log=[];
   log(`戰鬥開始：${S.player.name} VS ${S.enemy.name}`);
-  S.screen="battle";render();
+  S.screen="reveal";render();
 }
 function drawPlayer(){if(S.deck.length){if(S.hand.length<9)S.hand.push(S.deck.pop())}else fatigue(S.player)}
 function drawEnemy(){if(S.enemyDeck.length){if(S.enemyHand.length<9)S.enemyHand.push(S.enemyDeck.pop())}else fatigue(S.enemy)}
@@ -46,7 +50,7 @@ function useCard(i){
  if(S.phase!=="player")return;
  const id=S.hand[i],c=card(id);if(!c||S.mana<c.cost)return;
  S.hand.splice(i,1);S.mana-=c.cost;S.usedThisTurn=true;S.lastPlayerCard=c.id;S.discard.push(c.id);log(`你使用【${c.name}】。`);
- resolve(c,S.player,S.enemy,true);render();if(S.enemy.curHp<=0)return;
+ resolve(c,S.player,S.enemy,true);render();showFx(c.type==="攻擊"?"attack":c.type==="恢復"?"heal":c.type==="防禦"?"defend":c.type==="詛咒"?"curse":"skill",c.type==="攻擊"?"⚔ "+c.name:c.name);if(S.enemy.curHp<=0)return;
 }
 function resolve(c,me,op,isPlayer){
  const atk=(n)=>damage(op,n,me.name);
@@ -99,7 +103,7 @@ function useSkill(){
  else if(id==="ra"){damage(S.enemy,6,S.player.name);S.enemy.burn=2}
  else if(id==="osiris"){let pick=S.discard.find(x=>card(x).cost<=2);if(pick)S.hand.push(pick)}
  if(S.player.id==="thor"||S.player.id==="heracles"||S.player.id==="shiva")S.player.stacks=Math.min(3,(S.player.stacks||0)+1);
- render();
+ render();showFx("skill","✦ "+S.player.skill);
 }
 function endTurn(){
  if(S.phase!=="player")return;
@@ -166,5 +170,5 @@ function battle(){
 }
 function fighter(c,enemy){return `<div class="fighter ${enemy?"enemy":""}" style="--c1:${c.c1};--c2:${c.c2}"><div class="fighter-head"><div class="avatar">${c.emoji}</div><div><b>${c.name}</b><div class="small">${c.origin} · ${c.tag}</div><div class="mana">⚡ ${enemy?S.enemyMana:S.mana}/6</div></div></div><div class="hpbar"><div class="hpfill" style="width:${Math.max(0,c.curHp/c.hp*100)}%"></div></div><div class="status">HP ${Math.max(0,c.curHp)} / ${c.hp}　護盾 ${c.shield||0}</div></div>`}
 function skillUI(p){return `<div class="skill"><b>✦ ${p.skill}</b><span class="small">　${p.desc}</span><button onclick="useSkill()" ${S.phase!=="player"||S.mana<p.skillCost||S.skillCooldown>0||p.skillBlocked?"disabled":""}>消耗 ${p.skillCost} ⚡ ${S.skillCooldown?`CD ${S.skillCooldown}`:"發動"}</button></div>`}
-function cardUI(c,i){return `<article class="card ${S.phase!=="player"||S.mana<c.cost?"disabled":""}" onclick="useCard(${i})"><span class="rarity">${c.rarity}</span><span class="cost">${c.cost}</span><div class="type">${c.type}</div><h3>${c.name}</h3><p>${c.desc}</p></article>`}
+function cardUI(c,i){return `<article data-type="${c.type}" class="card ${S.phase!=="player"||S.mana<c.cost?"disabled":""}" onclick="useCard(${i})"><span class="rarity">${c.rarity}</span><span class="cost">${c.cost}</span><div class="type">${c.type}</div><h3>${c.name}</h3><p>${c.desc}</p></article>`}
 render();

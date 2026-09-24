@@ -67,3 +67,33 @@ button{font:inherit;color:inherit}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px;z-index:20}
 .modal-box{width:min(520px,100%);background:#111527;border:1px solid var(--gold);border-radius:18px;padding:24px;text-align:center}
 @media(max-width:850px){.battle-top{grid-template-columns:1fr}.vs{display:none}.hand .card{width:130px}.battle{padding:10px}}
+
+/* V2: animated collectible-card presentation */
+:root{--glow:rgba(245,209,127,.52)}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(115deg,transparent 0 130px,rgba(244,208,128,.022) 132px 133px);z-index:-1}
+.char-card,.card{isolation:isolate;box-shadow:inset 0 0 0 2px rgba(241,203,117,.10),0 12px 26px #0009}
+.char-card::before,.card::before{content:"✦";position:absolute;left:50%;top:16%;transform:translateX(-50%);font-size:70px;color:#e8d09a12;pointer-events:none}
+.char-card::after,.card::after{content:"";position:absolute;inset:4px;border:1px solid #e3c68165;border-radius:12px;pointer-events:none}
+.char-art{position:relative;overflow:hidden;filter:saturate(1.15)}
+.char-art::after{content:"";position:absolute;inset:-100%;background:linear-gradient(100deg,transparent 44%,#fff5d82e 49%,transparent 55%);transform:translateX(-45%);transition:transform .7s;pointer-events:none}
+.char-card:hover .char-art::after{transform:translateX(45%)}
+.char-card:hover,.card:hover{box-shadow:0 0 28px var(--glow),0 16px 35px #0009}
+.card{background:radial-gradient(circle at 50% 31%,#43517899,transparent 42%),linear-gradient(145deg,#2b3453,#10121e 72%);border:2px solid #b9a071;overflow:hidden}
+.card .type{padding-top:52px;text-align:center;font-size:13px}
+.card h3{text-align:center;text-shadow:0 2px 8px #000;font-size:17px}
+.card p{background:#090d1dcc;border-top:1px solid #bda57055;border-radius:7px;padding:9px;min-height:66px}
+.card::before{font-size:56px;top:12%;color:#e4c88d99;text-shadow:0 0 22px #f4ce8d55}
+.card[data-type="攻擊"]::before{content:"⚔"}.card[data-type="防禦"]::before{content:"⬡"}.card[data-type="恢復"]::before{content:"✚";color:#8fe6b5}.card[data-type="控制"]::before{content:"◈";color:#ad9aff}.card[data-type="詛咒"]::before{content:"☠";color:#c8a4ec}.card[data-type="神力"]::before{content:"ϟ";color:#8ec8ff}.card[data-type="傳說"]::before{content:"✹";color:#ffe2a1}
+.card[data-type="傳說"]{border-color:#f2c66a;box-shadow:0 0 14px #b78b3b66}
+.battle .board{position:relative;overflow:hidden}
+.battle .board::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,#d2b96d11,transparent 55%)}
+.avatar{box-shadow:inset 0 0 20px #f9e7b02b,0 0 16px #d5b36633}
+.fx-layer{position:fixed;inset:0;z-index:40;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.fx-burst{font-size:clamp(45px,10vw,110px);font-weight:900;text-align:center;animation:fx-burst .95s ease-out both;text-shadow:0 0 24px currentColor,0 0 60px currentColor;white-space:pre-line}
+.fx-burst.attack{color:#ffb777}.fx-burst.heal{color:#8fffc6}.fx-burst.defend{color:#8acbff}.fx-burst.skill{color:#edc57b}.fx-burst.curse{color:#ca9aff}
+@keyframes fx-burst{0%{transform:scale(.3) rotate(-8deg);opacity:0;filter:blur(14px)}28%{transform:scale(1.18);opacity:1;filter:blur(0)}70%{transform:scale(1);opacity:1}100%{transform:scale(1.4) translateY(-30px);opacity:0}}
+.screen-shake{animation:screen-shake .35s linear}@keyframes screen-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(4px)}}
+.flip-card{width:min(320px,70vw);aspect-ratio:2/3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:18px;border:3px double #f0d48d;border-radius:20px;background:radial-gradient(circle,#37426b,#0f1326 75%);box-shadow:0 0 60px #d2a95c66;animation:flip-reveal 1.2s ease-out both;cursor:pointer}
+.flip-card .reveal-icon{font-size:100px}.flip-card b{font-size:32px;color:#f8e2a1}.flip-card p{padding:0 16px;text-align:center}
+@keyframes flip-reveal{0%{transform:rotateY(90deg) scale(.65);opacity:0}65%{transform:rotateY(-9deg) scale(1.08);opacity:1}100%{transform:rotateY(0) scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
