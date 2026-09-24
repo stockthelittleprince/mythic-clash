@@ -815,7 +815,8 @@ function cardUI(c,i){
     <span class="rarity">${c.rarity}</span>
     <span class="cost">${c.cost}</span>
     <div class="type">${c.type}</div>
-    <div class="card-illustration ${c.type}" style="${v.style}">
+    <div class="card-illustration ${c.type}" style="${v.style};--card-art:url("assets/cards/${c.id}.webp")">
+      <img class="card-art-image" src="assets/cards/${c.id}.webp" alt="${esc(c.name)}" loading="lazy" onerror="this.style.display='none'">
       <div class="card-art-glyph">${v.glyph}</div>
       <div class="card-shine"></div>
     </div>

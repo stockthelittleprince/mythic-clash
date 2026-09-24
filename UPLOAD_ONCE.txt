@@ -1,0 +1,30 @@
+MYTHIC CLASH｜一次更新步驟
+
+1. 解壓縮本 ZIP。
+2. 解壓後最外層應直接看到：assets、index.html、data.js、game.js、style.css、README.md。
+3. GitHub：進入 mythic-clash → Add file → Upload files。
+4. 一次拖入 assets 資料夾，以及 index.html、data.js、game.js、style.css、README.md。
+5. 如果 GitHub 顯示同名檔案，讓新版覆蓋舊版。
+6. Commit changes。
+7. 等 GitHub Pages 更新約 1–3 分鐘後重新整理網站。
+
+assets 正確結構：
+assets/
+  battle-arena.webp
+  characters-collage.webp
+  characters/  （30 張角色）
+  cards/       （50 張卡）
+  backgrounds/ （10 張背景）
+  ui/          （可留空）
+
+不要變成 assets/assets/。
+
+本版已做的品質更新：
+- 30 個角色圖片全部存在且路徑核對。
+- 50 張卡全部存在且路徑核對。
+- 10 張背景全部存在。
+- 卡牌現在會顯示實際卡面圖片，不再只顯示符號。
+- 角色立繪改為較小、較不放大的展示區，降低低解析度放大造成的模糊感。
+- 移除角色原圖底部嵌入的文字區。
+- 卡牌與角色圖片做高品質放大與銳化處理。
+- game.js 已通過 Node 語法檢查。
