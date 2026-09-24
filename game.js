@@ -1,4 +1,9 @@
 const app=document.getElementById("app");
+const ART={amaterasu:"assets/amaterasu-bust.png",zeus:"assets/zeus-bust.png"};
+const TYPE_ICON={攻擊:"⚔",防禦:"◈",恢復:"✚",控制:"◐",手牌:"✦",詛咒:"☠",神力:"ϟ",特殊:"✧",傳說:"♛"};
+function artFor(c){return ART[c.id]||""}
+function portraitHTML(c,cls="portrait"){const src=artFor(c);return src?`<img class="${cls}" src="${src}" alt="${esc(c.name)}">`:`<div class="${cls} portrait-fallback"><span>${esc(c.name.slice(0,1))}</span></div>`}
+
 const S={screen:"home",player:null,enemy:null,turn:1,phase:"player",mana:3,enemyMana:3,hand:[],enemyHand:[],discard:[],deck:[],enemyDeck:[],log:[],lastPlayerCard:null,shield:0,enemyShield:0,usedThisTurn:false,skillCooldown:0,enemySkillCooldown:0,playerUsedSkill:false,enemyUsedSkill:false,drawLock:0,limit:99};
 
 function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
@@ -13,18 +18,11 @@ function render(){
   if(S.screen==="draw") return drawScreen();
   return battle();
 }
-function home(){app.innerHTML=`<main class="screen home">
-  <div class="brand"><h1>神話爭鋒</h1><small>MYTHIC CLASH · CARD BATTLE</small></div>
-  <p class="subtitle">諸神、英雄、妖魔與命運，在一場牌局中決定勝負。</p>
-  <button class="cta" onclick="goSelect()">開始戰鬥</button>
-  <div class="panel" style="padding:18px;text-align:center;max-width:680px">
-    <b>目前原型規則</b><p class="small">30名角色・50張功能牌・神力資源・AI對手・疲勞機制。角色立繪可在 assets/characters/ 替換，牌框與UI會保留目前的東方神話華麗風格。</p>
-  </div>
-</main>`}
+function home(){app.innerHTML=`<main class="screen home v6-home"><div class="home-hero-art"></div><div class="home-vignette"></div><div class="home-content"><div class="brand"><h1>神話爭鋒</h1><small>MYTHIC CLASH · MYTHIC CARD BATTLE</small></div><p class="subtitle">三十位神話角色，跨越東西神話，決戰於命運之牌。</p><button class="cta cta-large" onclick="goSelect()">開始遊戲</button><div class="home-chips"><span>30 位神話角色</span><span>50 張功能牌</span><span>⚡ 神力戰鬥</span></div></div></main>`}
 function goSelect(){S.screen="draw";drawScreen()}
-function drawScreen(){app.innerHTML=`<main class="screen draw-screen"><div class="brand"><h1>命運召喚</h1><small>THE FATE AWAKENS</small></div><p class="subtitle">三十位神話角色，等待命運揭示。</p><div class="fate-card" id="fateCard"><div class="fate-sigil">✦</div><span>MYTHIC CLASH</span></div><button class="cta" id="drawButton" onclick="revealFate()">抽取命運</button><p class="small">每場可免費重抽一次；所有角色均可抽到。</p></main>`}
+function drawScreen(){app.innerHTML=`<main class="screen draw-screen v6-draw"><div class="draw-bg"></div><div class="draw-content"><div class="brand"><h1>命運召喚</h1><small>THE FATE AWAKENS</small></div><p class="subtitle">三十位神話角色，等待命運揭示。</p><div class="fate-stage"><div class="fate-card" id="fateCard"><div class="fate-sigil">✦</div><span>MYTHIC CLASH</span></div></div><button class="cta" id="drawButton" onclick="revealFate()">抽取命運</button><p class="small">每場可免費重抽一次；所有角色均可抽到。</p></div></main>`}
 let drawnId=null,rerolls=0;
-function revealFate(){let btn=document.getElementById('drawButton');if(btn)btn.disabled=true;const pool=CHARACTERS.filter(c=>c.id!==drawnId);drawnId=shuffle(pool)[0].id;let c=getChar(drawnId);let el=document.getElementById('fateCard');el.classList.add('flipping');setTimeout(()=>{el.classList.remove('flipping');el.classList.add('revealed');el.style.setProperty('--c1',c.c1);el.style.setProperty('--c2',c.c2);el.innerHTML=`<div class="fate-portrait">${c.emoji}</div><strong>${c.name}</strong><small>${c.tag} · HP ${c.hp}</small>`;document.getElementById('drawButton').outerHTML=`<div class="draw-buttons"><button class="cta" onclick="startGame('${c.id}')">以此角色出戰</button>${rerolls<1?'<button class="ghost" onclick="rerollFate()">命運重抽（1次）</button>':''}</div>`;},650)}
+function revealFate(){let btn=document.getElementById('drawButton');if(btn)btn.disabled=true;const pool=CHARACTERS.filter(c=>c.id!==drawnId);drawnId=shuffle(pool)[0].id;let c=getChar(drawnId);let el=document.getElementById('fateCard');el.classList.add('flipping');setTimeout(()=>{el.classList.remove('flipping');el.classList.add('revealed');el.style.setProperty('--c1',c.c1);el.style.setProperty('--c2',c.c2);const art=artFor(c);el.innerHTML=`<div class="fate-portrait-wrap">${art?`<img class="fate-portrait-img" src="${art}" alt="${esc(c.name)}">`:`<div class="fate-sigil big">${TYPE_ICON.特殊}</div>`}</div><strong>${c.name}</strong><small>${c.tag} · HP ${c.hp}</small><div class="fate-skill">✦ ${esc(c.skill)}</div>`;document.getElementById('drawButton').outerHTML=`<div class="draw-buttons"><button class="cta" onclick="startGame('${c.id}')">以此角色出戰</button>${rerolls<1?'<button class="ghost" onclick="rerollFate()">命運重抽（1次）</button>':''}</div>`;},650)}
 function rerollFate(){rerolls++;drawScreen();revealFate()}
 
 function select(){app.innerHTML=`<main class="screen"><div class="toolbar" style="width:min(1180px,100%)"><div><div class="brand" style="text-align:left;font-size:24px">選擇你的神話角色</div><div class="small">角色決定你的被動與主動技能，功能牌決定你的戰術。</div></div><button onclick="S.screen='home';render()">返回</button></div>
@@ -211,14 +209,14 @@ function playEffect(type,name,info={}){
 }
 function battle(){
  const p=S.player,e=S.enemy;
- app.innerHTML=`<main class="battle"><div class="toolbar"><div><div class="brand" style="text-align:left;font-size:24px">神話爭鋒</div><div class="small">第 ${S.turn} 回合 · ${S.phase==="player"?"你的回合":"對手回合"}</div></div><button class="ghost" onclick="S.screen='select';render()">退出戰鬥</button></div>
+ app.innerHTML=`<main class="battle v6-battle"><div class="battle-backdrop"></div><div class="battle-veil"></div><div class="toolbar"><div><div class="brand" style="text-align:left;font-size:24px">神話爭鋒</div><div class="small">第 ${S.turn} 回合 · ${S.phase==="player"?"你的回合":"對手回合"}</div></div><button class="ghost" onclick="S.screen='select';render()">退出戰鬥</button></div>
  <div class="battle-top">${fighter(p,false)}<div class="vs">VS</div>${fighter(e,true)}</div>
  <section class="board"><div id="fxLayer" class="fx-layer" aria-live="polite"></div><div class="log">${S.log.map(x=>`<div>› ${esc(x)}</div>`).join("")}</div>
  <div class="center-actions"><span class="mana">⚡ 神力 ${S.mana}/6</span><button class="endturn" onclick="endTurn()" ${S.phase!=="player"?"disabled":""}>結束回合</button></div>
  ${skillUI(p)}
  <div class="hand">${S.hand.map((id,i)=>cardUI(card(id),i)).join("")}</div></section></main>`
 }
-function fighter(c,enemy){return `<div class="fighter ${enemy?"enemy":""}" style="--c1:${c.c1};--c2:${c.c2}"><div class="fighter-head"><div class="avatar"><div class="avatar-glow">${c.emoji}</div></div><div><b>${c.name}</b><div class="small">${c.origin} · ${c.tag}</div><div class="mana">⚡ ${enemy?S.enemyMana:S.mana}/6</div></div></div><div class="hpbar"><div class="hpfill" style="width:${Math.max(0,c.curHp/c.hp*100)}%"></div></div><div class="status">HP ${Math.max(0,c.curHp)} / ${c.hp}　護盾 ${c.shield||0}</div></div>`}
+function fighter(c,enemy){return `<div class="fighter ${enemy?"enemy":""}" style="--c1:${c.c1};--c2:${c.c2}"><div class="fighter-art">${portraitHTML(c,"fighter-portrait")}</div><div class="fighter-overlay"><div class="fighter-head"><div><b>${c.name}</b><div class="small">${c.origin} · ${c.tag}</div><div class="mana">⚡ ${enemy?S.enemyMana:S.mana}/6</div></div></div><div class="hpbar"><div class="hpfill" style="width:${Math.max(0,c.curHp/c.hp*100)}%"></div></div><div class="status">HP ${Math.max(0,c.curHp)} / ${c.hp}　護盾 ${c.shield||0}</div></div></div>`}
 function skillUI(p){return `<div class="skill"><b>✦ ${p.skill}</b><span class="small">　${p.desc}</span><button onclick="useSkill()" ${S.phase!=="player"||S.mana<p.skillCost||S.skillCooldown>0||p.skillBlocked?"disabled":""}>消耗 ${p.skillCost} ⚡ ${S.skillCooldown?`CD ${S.skillCooldown}`:"發動"}</button></div>`}
-function cardUI(c,i){return `<article class="card ${S.phase!=="player"||S.mana<c.cost?"disabled":""}" onclick="useCard(${i})"><span class="rarity">${c.rarity}</span><span class="cost">${c.cost}</span><div class="type">${c.type}</div><div class="card-illustration ${c.type}"><span>${({攻擊:"⚔",防禦:"⬡",恢復:"✚",控制:"☾",手牌:"✦",詛咒:"☠",神力:"⚡",特殊:"✧",傳說:"♛"})[c.type]||"✦"}</span><div class="card-shine"></div></div><h3>${c.name}</h3><p>${c.desc}</p></article>`}
+function cardUI(c,i){return `<article class="card ${S.phase!=="player"||S.mana<c.cost?"disabled":""}" onclick="useCard(${i})"><span class="rarity">${c.rarity}</span><span class="cost">${c.cost}</span><div class="type">${c.type}</div><div class="card-illustration ${c.type}"><div class="card-art-glyph">${TYPE_ICON[c.type]||"✦"}</div><div class="card-shine"></div></div><h3>${c.name}</h3><p>${c.desc}</p></article>`}
 render();

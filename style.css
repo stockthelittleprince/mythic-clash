@@ -182,3 +182,51 @@ button{font:inherit;color:inherit}
  .fx-burst.target-enemy,.fx-burst.target-player{transform:none}
  .avatar{width:70px;height:70px}
 }
+
+/* V6 ART DIRECTION - generated concept art is now used as actual game art */
+.v6-home{position:relative;justify-content:center;overflow:hidden;background:#060812}
+.home-hero-art{position:absolute;inset:0;background:url('assets/home-hero.png') center/cover no-repeat;filter:saturate(1.08) contrast(1.04);transform:scale(1.04);animation:heroBreath 12s ease-in-out infinite alternate}
+.home-vignette{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,rgba(6,8,18,.12),rgba(6,8,18,.62) 62%,rgba(4,5,10,.94));}
+.home-content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center;gap:24px;padding:42px 24px;max-width:900px}
+.home-content .brand h1{font-size:clamp(54px,8vw,105px);margin:0;text-shadow:0 8px 35px #000,0 0 40px #e7c36d55}
+.home-content .subtitle{font-size:18px;color:#f3ead6;text-shadow:0 2px 8px #000;letter-spacing:.08em}
+.cta-large{font-size:20px;padding:16px 58px;border-radius:12px;min-width:220px}
+.home-chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.home-chips span{padding:7px 14px;border:1px solid #d9b76c66;background:#080b18aa;border-radius:999px;color:#eee3c7;font-size:13px;backdrop-filter:blur(8px)}
+@keyframes heroBreath{from{transform:scale(1.04)}to{transform:scale(1.09)}}
+
+.v6-draw{position:relative;overflow:hidden;background:#080a13}
+.draw-bg{position:absolute;inset:0;background:linear-gradient(90deg,#080a13cc,#080a1370,#080a13cc),url('assets/summon-scene.png') center/cover no-repeat;filter:saturate(1.05)}
+.draw-content{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:18px;padding-top:42px;text-shadow:0 2px 12px #000}
+.draw-content .subtitle{color:#eee6d5}
+.fate-stage{padding:16px;border-radius:24px;background:linear-gradient(145deg,#0a0d19aa,#171326cc);border:1px solid #d9b76c66;box-shadow:0 0 70px #e0b85c22, inset 0 0 30px #fff1}
+.fate-card{width:310px;height:470px;background:linear-gradient(145deg,#0c1020,#171b33);border:3px double #f0cf7b;box-shadow:0 0 0 5px #0c1020,0 0 0 7px #9c7b37,0 25px 90px #000b;}
+.fate-card.revealed{background:linear-gradient(180deg,var(--c2),var(--c1) 42%,#070914 100%);}
+.fate-portrait-wrap{height:300px;margin:12px;border-radius:12px;overflow:hidden;border:1px solid #f3d78688;background:radial-gradient(circle,#e6bd67,#241a15 70%);display:grid;place-items:center;box-shadow:inset 0 0 50px #0008}
+.fate-portrait-img{width:100%;height:100%;object-fit:cover;object-position:center 35%;mix-blend-mode:normal;filter:saturate(1.08) contrast(1.05)}
+.fate-sigil.big{font-size:120px;color:#f8d77f}
+.fate-card strong{font-size:32px}.fate-card small{font-size:14px}.fate-skill{margin:10px 20px;padding:9px;border:1px solid #d8b97555;background:#0b0f1caa;border-radius:9px;color:#f5dfa6}
+
+.v6-battle{position:relative;min-height:100vh;overflow:hidden;background:#070a12}
+.battle-backdrop{position:absolute;inset:0;background:linear-gradient(180deg,#070a12aa,#070a1266 45%,#070a12e8),url('assets/battle-scene.png') center/cover no-repeat;opacity:.95;transform:scale(1.03);}
+.battle-veil{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,transparent 0,rgba(4,6,14,.22) 45%,rgba(4,6,14,.85) 100%);pointer-events:none}
+.v6-battle>.toolbar,.v6-battle>.battle-top,.v6-battle>.board{position:relative;z-index:2}
+.v6-battle .toolbar{padding:6px 12px;background:#070a1299;border-bottom:1px solid #d9b76c22;backdrop-filter:blur(10px)}
+.v6-battle .battle-top{margin-top:10px}
+.v6-battle .fighter{height:300px;padding:0;overflow:hidden;border-radius:22px;background:#080b16cc;border:1px solid #d9b76c55;box-shadow:0 20px 70px #000b}
+.fighter-art{position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,var(--c2),transparent 45%),linear-gradient(135deg,var(--c1),#080a13 75%);}
+.fighter-portrait{width:100%;height:100%;object-fit:cover;object-position:center 32%;filter:saturate(1.1) contrast(1.05);}
+.portrait-fallback{display:grid;place-items:center;width:100%;height:100%;background:radial-gradient(circle at 50% 35%,var(--c2),transparent 28%),linear-gradient(145deg,var(--c1),#080a13 80%);}
+.portrait-fallback span{font-family:"Noto Serif TC";font-size:120px;color:#f5dda2;text-shadow:0 0 40px #f4c85a88,0 8px 30px #000;opacity:.9}
+.fighter-overlay{position:absolute;inset:auto 0 0;padding:65px 18px 15px;background:linear-gradient(transparent,#050710 28%,#050710ee);}
+.v6-battle .fighter-head{justify-content:space-between}.v6-battle .fighter-head b{font-size:25px;text-shadow:0 2px 8px #000}.v6-battle .vs{font-size:38px;color:#f3d27b;text-shadow:0 0 25px #f3c85c88}
+.v6-battle .board{margin-top:18px;background:#070a13cc;border:1px solid #d9b76c55;border-radius:22px;backdrop-filter:blur(8px);box-shadow:0 25px 80px #000b;overflow:hidden}
+.v6-battle .log{background:#070a1399;min-height:72px;border-bottom:1px solid #d9b76c22}
+.v6-battle .skill{margin:10px 14px;background:linear-gradient(90deg,#241b3cdd,#0c1020dd);border:1px solid #b88aff66;box-shadow:0 0 30px #8b5bd022}
+.v6-battle .hand{padding:14px 18px 22px;gap:14px}
+.v6-battle .card{width:190px;min-height:280px;background:linear-gradient(180deg,#151629,#070910);border:2px solid #d3b36b;box-shadow:0 15px 35px #000b, inset 0 0 0 2px #171a2b;}
+.v6-battle .card-illustration{height:130px;margin:10px 0;background-image:linear-gradient(#080b1833,#080b18aa),url('assets/card-detail.png');background-size:cover;background-position:center;}
+.v6-battle .card-art-glyph{font-size:68px;color:#f5d889;text-shadow:0 0 28px currentColor;position:relative;z-index:1}
+.v6-battle .card h3{font-size:19px;color:#f5dda2}.v6-battle .card p{font-size:12px;color:#d2d5df;padding:0 10px 12px}
+@media(max-width:900px){.v6-battle .fighter{height:235px}.v6-battle .card{width:160px}.v6-battle .card-illustration{height:105px}.fate-card{width:270px;height:430px}.fate-portrait-wrap{height:260px}}
+@media(max-width:650px){.v6-battle .battle-top{grid-template-columns:1fr;}.v6-battle .vs{display:none}.v6-battle .fighter{height:210px}.v6-battle .hand{overflow-x:auto;justify-content:flex-start}.v6-battle .card{min-width:150px}.home-content .subtitle{font-size:14px}.home-chips{max-width:340px}}
