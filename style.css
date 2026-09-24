@@ -1,173 +1,953 @@
+/* =========================================================
+   MYTHIC CLASH — COMPLETE V7 STYLESHEET
+   Includes the missing base layout + V7 visual layer.
+   ========================================================= */
 
-/* V7 ART REBUILD: real local art, no emoji-dependent presentation */
-@font-face{font-family:MythicLocal;src:local("Noto Serif TC"),local("PMingLiU"),local("Microsoft JhengHei");}
-body{font-family:MythicLocal,"Noto Serif TC","Microsoft JhengHei",serif;background:#050711;}
-.v7-home,.v7-draw,.v7-battle{position:relative;overflow:hidden;background:#050711!important;}
-.v7-home-art{position:absolute;inset:0;background:linear-gradient(90deg,rgba(4,6,15,.72),rgba(4,6,15,.08) 45%,rgba(4,6,15,.72)),url('assets/characters-collage.jpg') center/cover no-repeat;filter:saturate(1.08) contrast(1.05);transform:scale(1.025);}
-.v7-draw-art{position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(245,205,105,.14),transparent 28%),linear-gradient(90deg,rgba(5,7,17,.88),rgba(5,7,17,.38),rgba(5,7,17,.88)),url('assets/characters-collage.jpg') center/cover no-repeat;filter:saturate(1.04);}
-.v7-shade{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,transparent 0,rgba(2,4,10,.2) 48%,rgba(2,4,10,.8) 100%);pointer-events:none;z-index:1;}
-.v7-home .home-content,.v7-draw .draw-content{z-index:2;}
-.v7-home .home-content{padding:56px 24px 70px;max-width:820px;background:radial-gradient(ellipse,rgba(7,9,20,.4),transparent 68%);}
-.v7-home .home-content .brand h1{font-size:clamp(58px,8vw,108px);text-shadow:0 4px 24px #000,0 0 38px #e7c36d66;}
-.v7-home .cta-large{font-size:20px;min-width:220px;box-shadow:0 0 35px #d9b76c33,0 12px 35px #0009;}
-.home-chips span{background:rgba(6,8,17,.68)!important;border:1px solid #d9b76c88!important;backdrop-filter:blur(8px);}
-.v7-draw .fate-stage{background:rgba(4,6,15,.55);backdrop-filter:blur(12px);box-shadow:0 0 70px #d9b76c33,inset 0 0 45px #fff1;}
-.v7-draw .fate-card{box-shadow:0 25px 70px #000c,0 0 55px #d9b76c44;}
-.v7-draw .fate-card.revealed{overflow:hidden;}
-.v7-draw .fate-portrait-wrap{height:290px;width:100%;overflow:hidden;border-radius:12px;margin-bottom:12px;background:#15182a;}
-.v7-draw .fate-portrait-img{width:100%;height:100%;object-fit:cover;object-position:center 28%;}
-.v7-battle{padding:12px 18px 26px;background:#050711!important;}
-.v7-battle:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(3,5,12,.25),rgba(3,5,12,.65)),url('assets/battle-arena.jpg') center/cover no-repeat;z-index:0;}
-.v7-battle>.toolbar,.v7-battle>.battle-top,.v7-battle>.board{position:relative;z-index:2;}
-.v7-battle .fighter{height:360px!important;padding:0!important;position:relative;overflow:hidden;background:rgba(4,6,14,.3)!important;border:1px solid #d9b76c88!important;box-shadow:0 18px 60px #000b,inset 0 0 0 1px #fff1!important;}
-.v7-battle .fighter-art{position:absolute;inset:0;background:#101528!important;}
-.v7-battle .fighter-portrait{width:100%;height:100%;object-fit:cover;object-position:center 24%;filter:saturate(1.12) contrast(1.06);}
-.v7-battle .fighter-overlay{padding:100px 22px 18px;background:linear-gradient(transparent 10%,rgba(4,6,14,.2) 30%,rgba(4,6,14,.96) 83%)!important;}
-.v7-battle .fighter-head{align-items:end;}
-.v7-battle .fighter-head b{font-size:26px;text-shadow:0 3px 12px #000;}
-.role-chip{font-size:11px;padding:5px 9px;border:1px solid #d9b76c77;border-radius:999px;background:#070a1499;color:#f5dda2;}
-.v7-battle .board{background:rgba(5,7,15,.76)!important;backdrop-filter:blur(8px);box-shadow:0 25px 80px #000d!important;}
-.v7-battle .log{background:rgba(0,0,0,.35)!important;}
-.v7-battle .card{width:190px!important;min-height:300px!important;border:2px solid #d9b76c!important;background:linear-gradient(180deg,#15182a,#080a13)!important;box-shadow:0 18px 38px #000c,inset 0 0 0 1px #fff1!important;}
-.v7-battle .card-illustration{height:145px!important;margin:8px 0 12px!important;background-size:cover!important;background-position:center!important;border:1px solid #d9b76c77;border-radius:10px;overflow:hidden;}
-.v7-battle .card-art-glyph{font-size:48px;text-shadow:0 0 25px currentColor;opacity:.72;}
-.v7-battle .card h3{font-size:18px;margin:8px 0;color:#f8dfa0;}
-.v7-battle .card p{font-size:12px;line-height:1.55;}
-.v7-battle .vs{font-size:44px!important;text-shadow:0 0 30px #f3c85c99;}
-.v7-battle .endturn{border:1px solid #d9b76c;background:linear-gradient(145deg,#745722,#d8b45f);color:#171108;box-shadow:0 0 25px #d9b76c33;}
-.v7-battle .skill{background:linear-gradient(90deg,rgba(37,25,62,.92),rgba(6,9,18,.9))!important;border:1px solid #c69bff88!important;}
-.v7-battle .skill button{background:#8d5bd6;border:1px solid #d8b7ff;color:#fff;border-radius:10px;padding:8px 14px;}
-.char-art{height:185px!important;overflow:hidden!important;background:#0c1020!important;}
-.roster-portrait{width:100%;height:100%;object-fit:cover;object-position:center 24%;}
-.char-card .portrait-fallback{width:100%;height:100%;}
-.portrait-fallback span{font-size:88px!important;}
-.portrait-fallback small{display:block;color:#d9b76c;position:absolute;bottom:18px;left:0;right:0;text-align:center;letter-spacing:.2em;}
-@media(max-width:900px){.v7-battle .battle-top{grid-template-columns:1fr!important}.v7-battle .vs{display:none!important}.v7-battle .fighter{height:290px!important}.v7-battle .hand{overflow-x:auto;justify-content:flex-start;flex-wrap:nowrap}.v7-battle .card{min-width:175px!important;}}
-/* ===== V7 VISUAL FIX ===== */
-body,
-.screen,
-.home,
-.draw-screen,
-.battle-screen {
-  color: #f6f0df !important;
+:root{
+  --bg:#070914;
+  --panel:#101426;
+  --panel2:#171b30;
+  --gold:#d9b76c;
+  --gold2:#f5dda2;
+  --text:#f6f0df;
+  --muted:#b8b3a5;
+  --purple:#9a6be0;
+  --danger:#ef6b72;
+  --green:#67d6a2;
 }
 
-/* 首頁圖片不要再被黑幕壓死 */
-.v7-home-art {
+*{box-sizing:border-box}
+
+html,body{
+  margin:0;
+  min-height:100%;
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Noto Serif TC","Microsoft JhengHei","PingFang TC",serif;
+}
+
+button{
+  font:inherit;
+  cursor:pointer;
+}
+
+button:disabled{
+  cursor:not-allowed;
+  opacity:.5;
+}
+
+.screen{
+  min-height:100vh;
+  position:relative;
+  overflow:hidden;
+  color:var(--text);
+}
+
+.small{
+  font-size:13px;
+  color:var(--muted);
+}
+
+.brand h1{
+  margin:0;
+  font-weight:900;
+}
+
+.brand small{
+  letter-spacing:.14em;
+}
+
+.subtitle{
+  line-height:1.8;
+}
+
+.cta,
+.ghost,
+.endturn{
+  border-radius:10px;
+  padding:11px 20px;
+  border:1px solid var(--gold);
+}
+
+.cta{
+  color:#171108;
+  background:linear-gradient(145deg,#87652a,#f0cf78);
+  box-shadow:0 8px 25px #0008;
+}
+
+.cta:hover{
+  filter:brightness(1.08);
+  transform:translateY(-1px);
+}
+
+.ghost{
+  color:var(--gold2);
+  background:#0b0e1acc;
+  border-color:#d9b76c88;
+}
+
+/* =========================================================
+   HOME
+   ========================================================= */
+
+.v7-home,
+.v7-draw,
+.v7-battle{
+  position:relative;
+  overflow:hidden;
+  background:#050711;
+}
+
+.v7-home-art{
+  position:absolute;
+  inset:0;
+  z-index:0;
   background:
-    linear-gradient(
-      90deg,
-      rgba(4,6,15,.18),
-      rgba(4,6,15,.02) 50%,
-      rgba(4,6,15,.20)
-    ),
-    url('assets/characters-collage.jpg') center/cover no-repeat !important;
+    linear-gradient(90deg,rgba(4,6,15,.20),rgba(4,6,15,.02) 50%,rgba(4,6,15,.20)),
+    url('assets/characters-collage.jpg') center/cover no-repeat;
+  filter:saturate(1.08) contrast(1.04);
+  transform:scale(1.025);
 }
 
-/* 降低整體黑色遮罩 */
-.v7-shade {
-  background:
-    radial-gradient(
-      circle at 50% 42%,
-      transparent 0,
-      rgba(2,4,10,.04) 55%,
-      rgba(2,4,10,.25) 100%
-    ) !important;
+.v7-shade{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:radial-gradient(circle at 50% 42%,transparent 0,rgba(2,4,10,.04) 55%,rgba(2,4,10,.25) 100%);
 }
-
-/* 首頁內容 */
-.v7-home .home-content {
-  color: #f6f0df !important;
-  text-align: center;
-  margin: 0 auto;
-  background: radial-gradient(
-    ellipse,
-    rgba(7,9,20,.48),
-    transparent 72%
-  ) !important;
-}
-
-/* 標題 */
-.v7-home .brand h1 {
-  color: #fff5d7 !important;
-  text-shadow:
-    0 4px 24px #000,
-    0 0 38px #e7c36d88 !important;
-}
-
-/* 副標 */
-.v7-home .brand small {
-  color: #ead8a5 !important;
-  text-shadow: 0 2px 10px #000;
-}
-
-/* 說明文字 */
-.v7-home .subtitle {
-  color: #fff8e8 !important;
-  text-shadow:
-    0 2px 10px #000,
-    0 1px 3px #000 !important;
-}
-
-/* 三個功能標籤 */
-.v7-home .home-chips span {
-  color: #fff2c7 !important;
-  background: rgba(6,8,17,.72) !important;
-  border: 1px solid #d9b76c99 !important;
-  text-shadow: 0 1px 5px #000;
-}
-
-/* 開始遊戲按鈕 */
-.v7-home .cta-large {
-  color: #171108 !important;
-  background: linear-gradient(
-    145deg,
-    #8c6b2b,
-    #efd07a
-  ) !important;
-}
-
-/* 戰鬥卡牌文字 */
-.v7-battle .card {
-  color: #f6f0df !important;
-}
-
-.v7-battle .card h3 {
-  color: #f8dfa0 !important;
-}
-
-.v7-battle .card p {
-  color: #eee5d2 !important;
-}
-/* ===== FIX CONTENT LAYER ===== */
 
 .v7-home .home-content,
-.v7-draw .draw-content {
-  position: relative !important;
-  z-index: 10 !important;
+.v7-draw .draw-content{
+  position:relative;
+  z-index:10;
 }
 
-.v7-home .home-content {
-  min-height: 100vh !important;
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
+.v7-home .home-content{
+  min-height:100vh;
+  width:100%;
+  padding:56px 24px 70px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  color:#f6f0df;
+  background:radial-gradient(ellipse,rgba(7,9,20,.48),transparent 72%);
 }
 
-.v7-home-art {
-  z-index: 0 !important;
+.v7-home .brand h1{
+  font-size:clamp(58px,8vw,108px);
+  line-height:1.05;
+  color:#fff5d7;
+  text-shadow:0 4px 24px #000,0 0 38px #e7c36d88;
 }
 
-.v7-shade {
-  z-index: 1 !important;
+.v7-home .brand small{
+  color:#ead8a5;
+  text-shadow:0 2px 10px #000;
 }
 
-.v7-home .brand,
-.v7-home .subtitle,
-.v7-home .cta-large,
-.v7-home .home-chips {
-  position: relative !important;
-  z-index: 11 !important;
+.v7-home .subtitle{
+  color:#fff8e8;
+  font-size:clamp(17px,2vw,22px);
+  margin:22px 0 30px;
+  text-shadow:0 2px 10px #000;
+}
+
+.v7-home .cta-large{
+  position:relative;
+  z-index:11;
+  min-width:220px;
+  font-size:20px;
+  padding:15px 28px;
+}
+
+.home-chips{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:10px;
+  margin-top:26px;
+}
+
+.home-chips span{
+  color:#fff2c7;
+  background:rgba(6,8,17,.72);
+  border:1px solid #d9b76c99;
+  border-radius:999px;
+  padding:8px 13px;
+  backdrop-filter:blur(8px);
+  text-shadow:0 1px 5px #000;
+}
+
+/* =========================================================
+   DRAW / FATE
+   ========================================================= */
+
+.v7-draw{
+  min-height:100vh;
+}
+
+.v7-draw-art{
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:
+    radial-gradient(circle at 50% 45%,rgba(245,205,105,.14),transparent 28%),
+    linear-gradient(90deg,rgba(5,7,17,.45),rgba(5,7,17,.12),rgba(5,7,17,.45)),
+    url('assets/characters-collage.jpg') center/cover no-repeat;
+}
+
+.v7-draw .draw-content{
+  min-height:100vh;
+  width:100%;
+  padding:42px 20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+
+.v7-draw .brand h1{
+  color:#fff5d7;
+  font-size:clamp(42px,6vw,72px);
+  text-shadow:0 3px 18px #000;
+}
+
+.v7-draw .brand small,
+.v7-draw .subtitle,
+.v7-draw .small{
+  color:#fff1cc;
+  text-shadow:0 2px 8px #000;
+}
+
+.v7-draw .fate-stage{
+  width:min(420px,92vw);
+  min-height:420px;
+  margin:24px 0;
+  padding:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(4,6,15,.62);
+  border:1px solid #d9b76c66;
+  border-radius:20px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 0 70px #d9b76c33,inset 0 0 45px #fff1;
+}
+
+.v7-draw .fate-card{
+  width:100%;
+  min-height:370px;
+  border-radius:16px;
+  border:1px solid #d9b76c88;
+  background:
+    radial-gradient(circle at 50% 35%,#30274d,#0a0d19 65%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  color:#fff4d0;
+  box-shadow:0 25px 70px #000c,0 0 55px #d9b76c44;
+}
+
+.v7-draw .fate-sigil{
+  font-size:76px;
+  color:#f0cf78;
+  text-shadow:0 0 35px #f0cf78aa;
+}
+
+.v7-draw .fate-sigil.big{
+  font-size:90px;
+}
+
+.v7-draw .fate-card>span{
+  letter-spacing:.18em;
+  color:#d9b76c;
+}
+
+.v7-draw .fate-card.revealed{
+  overflow:hidden;
+}
+
+.v7-draw .fate-portrait-wrap{
+  width:100%;
+  height:290px;
+  overflow:hidden;
+  border-radius:12px;
+  margin-bottom:12px;
+  background:#15182a;
+}
+
+.v7-draw .fate-portrait-img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center 28%;
+}
+
+.v7-draw .fate-card strong{
+  font-size:28px;
+  color:#fff0bd;
+  margin-top:3px;
+}
+
+.v7-draw .fate-card small{
+  margin-top:4px;
+  color:#e7d9bd;
+}
+
+.v7-draw .fate-skill{
+  width:100%;
+  margin-top:14px;
+  padding:12px;
+  border-radius:10px;
+  background:#070a1499;
+  color:#f5ead0;
+  line-height:1.6;
+}
+
+.draw-buttons{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+/* =========================================================
+   CHARACTER SELECT
+   ========================================================= */
+
+.toolbar{
+  width:min(1180px,calc(100% - 36px));
+  margin:0 auto;
+  padding:18px 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  position:relative;
+  z-index:5;
+}
+
+.panel{
+  width:min(1180px,calc(100% - 36px));
+  margin:0 auto 30px;
+  padding:18px;
+  border:1px solid #d9b76c44;
+  border-radius:18px;
+  background:#0b0e1dcc;
+  backdrop-filter:blur(10px);
+}
+
+.roster{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+}
+
+.char-card{
+  overflow:hidden;
+  border:1px solid #d9b76c55;
+  border-radius:14px;
+  background:linear-gradient(180deg,#171b30,#090c17);
+  box-shadow:0 10px 28px #0008;
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.char-card:hover{
+  transform:translateY(-4px);
+  border-color:#efd07a;
+}
+
+.char-art{
+  height:185px;
+  overflow:hidden;
+  background:#0c1020;
+}
+
+.roster-portrait{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center 24%;
+}
+
+.char-info{
+  padding:12px;
+}
+
+.char-info>b{
+  color:#f8dfa0;
+  font-size:20px;
+}
+
+.char-info>span{
+  float:right;
+  color:#f0c6ca;
+}
+
+.char-info .tag{
+  margin-top:5px;
+  color:#cfc7b5;
+  font-size:12px;
+}
+
+.char-info p{
+  margin:8px 0 0;
+  line-height:1.5;
+}
+
+.portrait-fallback{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+
+/* =========================================================
+   BATTLE
+   ========================================================= */
+
+.v7-battle{
+  min-height:100vh;
+  padding:0 18px 28px;
+}
+
+.v7-battle:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background:
+    linear-gradient(180deg,rgba(3,5,12,.20),rgba(3,5,12,.58)),
+    url('assets/battle-arena.jpg') center/cover no-repeat;
+}
+
+.v7-battle>.toolbar,
+.v7-battle>.battle-top,
+.v7-battle>.board{
+  position:relative;
+  z-index:2;
+}
+
+.battle-top{
+  width:min(1180px,100%);
+  margin:0 auto 14px;
+  display:grid;
+  grid-template-columns:1fr 100px 1fr;
+  gap:16px;
+  align-items:center;
+}
+
+.v7-battle .fighter{
+  height:360px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid #d9b76c88;
+  border-radius:16px;
+  background:rgba(4,6,14,.3);
+  box-shadow:0 18px 60px #000b,inset 0 0 0 1px #fff1;
+}
+
+.v7-battle .fighter-art{
+  position:absolute;
+  inset:0;
+  background:#101528;
+}
+
+.v7-battle .fighter-portrait{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center 24%;
+  filter:saturate(1.12) contrast(1.06);
+}
+
+.v7-battle .fighter-overlay{
+  position:absolute;
+  inset:0;
+  padding:100px 22px 18px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  background:linear-gradient(transparent 10%,rgba(4,6,14,.15) 30%,rgba(4,6,14,.96) 83%);
+}
+
+.fighter-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  gap:12px;
+}
+
+.v7-battle .fighter-head b{
+  font-size:26px;
+  color:#fff3ce;
+  text-shadow:0 3px 12px #000;
+}
+
+.role-chip{
+  font-size:11px;
+  padding:5px 9px;
+  border:1px solid #d9b76c77;
+  border-radius:999px;
+  background:#070a1499;
+  color:#f5dda2;
+}
+
+.hpbar{
+  width:100%;
+  height:10px;
+  margin-top:10px;
+  overflow:hidden;
+  border-radius:99px;
+  background:#2b1018;
+}
+
+.hpfill{
+  height:100%;
+  background:linear-gradient(90deg,#e65d6a,#f0cf78);
+  transition:width .35s ease;
+}
+
+.status{
+  margin-top:7px;
+  color:#ddd3c0;
+  font-size:13px;
+}
+
+.vs{
+  text-align:center;
+  font-size:44px;
+  font-weight:900;
+  color:#f7d36e;
+  text-shadow:0 0 30px #f3c85c99;
+}
+
+.board{
+  width:min(1180px,100%);
+  margin:0 auto;
+  padding:14px;
+  border:1px solid #d9b76c55;
+  border-radius:18px;
+  background:rgba(5,7,15,.82);
+  backdrop-filter:blur(8px);
+  box-shadow:0 25px 80px #000d;
+}
+
+.log{
+  min-height:54px;
+  max-height:92px;
+  overflow:auto;
+  padding:9px 12px;
+  border-radius:10px;
+  background:rgba(0,0,0,.35);
+  color:#cfc7b5;
+  font-size:12px;
+  line-height:1.55;
+}
+
+.center-actions{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:15px;
+  padding:12px 0;
+}
+
+.mana{
+  color:#f0cf78;
+  font-weight:700;
+}
+
+.endturn{
+  color:#171108;
+  background:linear-gradient(145deg,#745722,#d8b45f);
+  box-shadow:0 0 25px #d9b76c33;
+}
+
+.skill{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  margin-bottom:12px;
+  border-radius:12px;
+  background:linear-gradient(90deg,rgba(37,25,62,.92),rgba(6,9,18,.9));
+  border:1px solid #c69bff88;
+  color:#f4eaff;
+}
+
+.skill>b{
+  color:#ead3ff;
+  white-space:nowrap;
+}
+
+.skill .small{
+  flex:1;
+}
+
+.skill button{
+  background:#8d5bd6;
+  border:1px solid #d8b7ff;
+  color:#fff;
+  border-radius:10px;
+  padding:8px 14px;
+}
+
+.hand{
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  padding:8px 2px 12px;
+  align-items:stretch;
+}
+
+.card{
+  flex:0 0 190px;
+  min-height:300px;
+  position:relative;
+  padding:8px;
+  overflow:hidden;
+  border:2px solid #d9b76c;
+  border-radius:14px;
+  background:linear-gradient(180deg,#15182a,#080a13);
+  color:#f6f0df;
+  box-shadow:0 18px 38px #000c,inset 0 0 0 1px #fff1;
+  cursor:pointer;
+  transition:.18s ease;
+}
+
+.card:hover:not(.disabled){
+  transform:translateY(-8px);
+  box-shadow:0 24px 48px #000e,0 0 22px #d9b76c33;
+}
+
+.card.disabled{
+  filter:grayscale(.35);
+  opacity:.58;
+}
+
+.card .rarity{
+  position:absolute;
+  top:8px;
+  left:8px;
+  z-index:2;
+  padding:3px 6px;
+  border-radius:6px;
+  background:#080a13cc;
+  color:#f5dda2;
+  font-size:10px;
+}
+
+.card .cost{
+  position:absolute;
+  top:7px;
+  right:8px;
+  z-index:2;
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#282050;
+  border:1px solid #c9b2ff;
+  color:#fff;
+  font-weight:900;
+}
+
+.card .type{
+  padding:3px 4px;
+  text-align:right;
+  color:#bdb5a5;
+  font-size:11px;
+}
+
+.card-illustration{
+  height:145px;
+  margin:8px 0 12px;
+  background-size:cover;
+  background-position:center;
+  border:1px solid #d9b76c77;
+  border-radius:10px;
+  overflow:hidden;
+  position:relative;
+}
+
+.card-art-glyph{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  font-size:48px;
+  text-shadow:0 0 25px currentColor;
+  opacity:.72;
+}
+
+.card-shine{
+  position:absolute;
+  inset:-100% -40%;
+  background:linear-gradient(115deg,transparent 42%,#ffffff18 50%,transparent 58%);
+  transform:rotate(8deg);
+}
+
+.card h3{
+  font-size:18px;
+  margin:8px 0;
+  color:#f8dfa0;
+}
+
+.card p{
+  font-size:12px;
+  line-height:1.55;
+  color:#eee5d2;
+  margin:0;
+}
+
+/* =========================================================
+   EFFECTS
+   ========================================================= */
+
+.fx-layer{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  pointer-events:none;
+  display:none;
+  place-items:center;
+}
+
+.fx-layer.active{
+  display:grid;
+}
+
+.cast-card{
+  min-width:180px;
+  padding:18px 24px;
+  border:1px solid #efd07a;
+  border-radius:16px;
+  background:#090c18ee;
+  box-shadow:0 0 60px #d9b76c66;
+  text-align:center;
+  animation:castIn .42s ease both;
+}
+
+.cast-card span{
+  display:block;
+  font-size:42px;
+}
+
+.cast-card b{
+  display:block;
+  color:#f8dfa0;
+  font-size:22px;
+}
+
+.cast-card small{
+  color:#aaa;
+}
+
+.fx-burst{
+  min-width:180px;
+  padding:18px;
+  text-align:center;
+  border-radius:50%;
+  animation:burstIn 1.1s ease both;
+}
+
+.fx-burst span{
+  display:block;
+  font-size:54px;
+}
+
+.fx-burst b{
+  display:block;
+  color:#fff;
+  font-size:20px;
+}
+
+.fx-burst em{
+  display:block;
+  color:#ddd;
+  font-style:normal;
+  margin-top:5px;
+}
+
+.fx-number{
+  display:block;
+  font-size:40px;
+  font-weight:900;
+}
+
+.damage{color:#ff6873}
+.heal-num{color:#67e3a7}
+.shield-num{color:#7bc8ff}
+
+@keyframes castIn{
+  0%{transform:scale(.45) rotate(-6deg);opacity:0}
+  100%{transform:scale(1) rotate(0);opacity:1}
+}
+
+@keyframes burstIn{
+  0%{transform:scale(.25);opacity:0}
+  35%{transform:scale(1.2);opacity:1}
+  100%{transform:scale(1);opacity:0}
+}
+
+.impact-shake{animation:shake .45s ease}
+.heal-pulse{animation:healPulse .65s ease}
+.ward-pulse{animation:wardPulse .65s ease}
+.skill-pulse{animation:skillPulse .65s ease}
+
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-8px)}
+  50%{transform:translateX(8px)}
+  75%{transform:translateX(-4px)}
+}
+
+@keyframes healPulse{
+  50%{box-shadow:0 0 55px #67d6a255}
+}
+
+@keyframes wardPulse{
+  50%{box-shadow:0 0 55px #7bc8ff55}
+}
+
+@keyframes skillPulse{
+  50%{box-shadow:0 0 65px #b57cff55}
+}
+
+.hit-flash{animation:hitFlash .75s ease}
+.heal-glow{animation:healGlow .75s ease}
+.shield-glow{animation:shieldGlow .75s ease}
+.skill-glow{animation:skillGlow .75s ease}
+
+@keyframes hitFlash{
+  50%{filter:brightness(1.8) saturate(1.5)}
+}
+
+@keyframes healGlow{
+  50%{filter:brightness(1.35) saturate(1.3)}
+}
+
+@keyframes shieldGlow{
+  50%{filter:brightness(1.25) drop-shadow(0 0 20px #7bc8ff)}
+}
+
+@keyframes skillGlow{
+  50%{filter:brightness(1.4) saturate(1.5)}
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.modal{
+  position:fixed;
+  inset:0;
+  z-index:200;
+  display:grid;
+  place-items:center;
+  background:#03040bcc;
+  backdrop-filter:blur(7px);
+}
+
+.modal-box{
+  width:min(420px,90vw);
+  padding:32px;
+  border:1px solid #d9b76c;
+  border-radius:18px;
+  background:#101426;
+  box-shadow:0 30px 90px #000;
+  text-align:center;
+}
+
+.modal-box .brand{
+  color:#f8dfa0;
+}
+
+.modal-box p{
+  color:#ddd4c3;
+  line-height:1.7;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media(max-width:900px){
+  .roster{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .battle-top{
+    grid-template-columns:1fr;
+  }
+
+  .v7-battle .vs{
+    display:none;
+  }
+
+  .v7-battle .fighter{
+    height:290px;
+  }
+
+  .skill{
+    flex-wrap:wrap;
+  }
+
+  .skill .small{
+    min-width:100%;
+  }
+}
+
+@media(max-width:600px){
+  .v7-home .home-content{
+    padding:30px 18px;
+  }
+
+  .v7-home .brand h1{
+    font-size:52px;
+  }
+
+  .v7-home .subtitle{
+    font-size:16px;
+  }
+
+  .home-chips span{
+    font-size:12px;
+  }
+
+  .roster{
+    grid-template-columns:1fr;
+  }
+
+  .toolbar{
+    width:calc(100% - 24px);
+  }
+
+  .panel{
+    width:calc(100% - 24px);
+  }
+
+  .v7-draw .fate-stage{
+    min-height:360px;
+  }
+
+  .v7-draw .fate-card{
+    min-height:320px;
+  }
+
+  .v7-draw .fate-portrait-wrap{
+    height:230px;
+  }
 }
