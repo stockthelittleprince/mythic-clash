@@ -139,3 +139,35 @@ body,
 .v7-battle .card p {
   color: #eee5d2 !important;
 }
+/* ===== FIX CONTENT LAYER ===== */
+
+.v7-home .home-content,
+.v7-draw .draw-content {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+.v7-home .home-content {
+  min-height: 100vh !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.v7-home-art {
+  z-index: 0 !important;
+}
+
+.v7-shade {
+  z-index: 1 !important;
+}
+
+.v7-home .brand,
+.v7-home .subtitle,
+.v7-home .cta-large,
+.v7-home .home-chips {
+  position: relative !important;
+  z-index: 11 !important;
+}
