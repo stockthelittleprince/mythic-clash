@@ -1,0 +1,11 @@
+MYTHIC CLASH FINAL
+
+上傳到 GitHub：
+1. assets/characters 內 30 張 → GitHub assets/characters
+2. assets/cards 內 50 張 → GitHub assets/cards
+3. assets/backgrounds 內 10 張 → GitHub assets/backgrounds
+4. assets 根目錄的 battle-arena.webp、characters-collage.webp → GitHub assets
+5. index.html、data.js、game.js、style.css → GitHub 專案根目錄並覆蓋舊檔
+6. Commit changes，等待 GitHub Pages 更新。
+
+這版已完成牌庫/抽牌、50 張卡牌效果、30 位角色技能、AI、回合限制、狀態持續時間、死亡保命、命運逆轉、神域、沉默/封技/混亂/魂鎖等邏輯修正。

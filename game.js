@@ -93,14 +93,14 @@ function portraitHTML(c,cls="portrait"){
 const S={
   screen:"home", player:null, enemy:null,
   turn:1, phase:"player", mana:3, enemyMana:3,
-  hand:[], enemyHand:[], discard:[], deck:[], enemyDeck:[],
+  hand:[], enemyHand:[], discard:[], enemyDiscard:[], deck:[], enemyDeck:[],
   log:[], lastPlayerCard:null, lastEnemyCard:null,
   shield:0, enemyShield:0, usedThisTurn:false,
   skillCooldown:0, enemySkillCooldown:0,
   playerUsedSkill:false, enemyUsedSkill:false,
-  drawLock:0, limit:99,
-  turnStartHp:0, forbiddenNext:false,
-  pendingDraw:null, damageHistory:0
+  drawLock:0, limit:99, playerTurnLimit:99, enemyTurnLimit:99,
+  turnStartHp:0, forbiddenNext:false, lastEnemySnapshot:null, lastPlayerSnapshot:null, domainTurns:0,
+  pendingDraw:null, damageHistory:0, resolving:false
 };
 
 function starterDeck(){
@@ -209,20 +209,20 @@ function rerollFate(){
 
 function startGame(id){
   const pc=getChar(id);
-  S.player={...pc,curHp:pc.hp,shield:0,usedSkill:false,stacks:0,trial:0,forbiddenNext:false};
+  S.player={...pc,curHp:pc.hp,shield:0,usedSkill:false,skillUses:0,stacks:0,trial:0,forbiddenNext:false,zeusPassiveUsed:false,turnLimit:99,rebirthOnce:pc.id==='izanagi'};
   const choices=shuffle(CHARACTERS.filter(c=>c.id!==id));
   const ec=choices[0];
-  S.enemy={...ec,curHp:ec.hp,shield:0,usedSkill:false,stacks:0,trial:0,forbiddenNext:false};
+  S.enemy={...ec,curHp:ec.hp,shield:0,usedSkill:false,skillUses:0,stacks:0,trial:0,forbiddenNext:false,zeusPassiveUsed:false,turnLimit:99,rebirthOnce:ec.id==='izanagi'};
 
   S.deck=starterDeck();
   S.enemyDeck=starterDeck();
-  S.hand=[]; S.enemyHand=[]; S.discard=[];
+  S.hand=[]; S.enemyHand=[]; S.discard=[]; S.enemyDiscard=[];
   S.turn=1; S.phase="player"; S.mana=3; S.enemyMana=3;
   S.skillCooldown=0; S.enemySkillCooldown=0;
   S.usedThisTurn=false; S.playerUsedSkill=false; S.enemyUsedSkill=false;
   S.lastPlayerCard=null; S.lastEnemyCard=null; S.log=[];
   S.turnStartHp=S.player.curHp;
-  S.forbiddenNext=false; S.drawLock=0; S.limit=99; S.damageHistory=0;
+  S.forbiddenNext=false; S.drawLock=0; S.limit=99; S.playerTurnLimit=99; S.enemyTurnLimit=99; S.lastEnemySnapshot=null; S.lastPlayerSnapshot=null; S.domainTurns=0; S.damageHistory=0; S.resolving=false;
 
   log(`戰鬥開始：${S.player.name} VS ${S.enemy.name}`);
 
@@ -254,12 +254,14 @@ function drawPlayer(silent=false){
 }
 
 function drawEnemy(silent=false){
-  if(!S.enemyDeck.length){
-    if(S.discard.length) S.enemyDeck=shuffle([...S.discard]);
-    else {fatigue(S.enemy);return null;}
-  }
   if(S.enemyHand.length>=9)return null;
-  return S.enemyHand.push(S.enemyDeck.pop());
+  if(!S.enemyDeck.length){
+    if(S.enemyDiscard.length){ S.enemyDeck=shuffle(S.enemyDiscard.splice(0)); log("對手牌庫耗盡，重新洗牌。"); }
+    else { fatigue(S.enemy); return null; }
+  }
+  const id=S.enemyDeck.pop();
+  S.enemyHand.push(id);
+  return id;
 }
 
 function fatigue(p){
@@ -346,16 +348,19 @@ function damage(target,n,source="",options={}){
   if(p.lastwall){
     n=Math.min(n,3);
   }
+  n=Math.max(0,n);
 
   let shield=p.shield||0;
-  let blocked=options.ignoreShield?0:Math.min(shield,n);
-  if(!options.ignoreShield)p.shield-=blocked;
+  const pierce=Math.max(0,options.shieldPierce||0);
+  const effectiveShield=Math.max(0,shield-pierce);
+  let blocked=options.ignoreShield?0:Math.min(effectiveShield,n);
+  if(!options.ignoreShield)p.shield=Math.max(0,shield-blocked-pierce);
   n-=blocked;
 
   if(n>0)p.curHp-=n;
 
-  if(p===S.player && n>0){
-    S.damageHistory++;
+  if(n>0){
+    if(p===S.player)S.damageHistory++;
     if(p.id==="jingwei")p.stacks=(p.stacks||0)+1;
     if(p.id==="heracles" && source)p.trial=(p.trial||0)+1;
   }
@@ -364,11 +369,14 @@ function damage(target,n,source="",options={}){
     log(`${source} 對 ${p.name} 造成 ${n+blocked} 點傷害${blocked?`（護盾抵消${blocked}）`:""}。`);
   }
 
-  if(p===S.player && p.reflect && n>0){
+  if(p.reflect && n>0){
     const reflected=Math.min(3,n);
+    const attacker=source===S.player?.name?S.player:(source===S.enemy?.name?S.enemy:null);
     p.reflect=0;
-    damage(S.enemy,reflected,p.name+" 的反彈");
+    if(attacker)damage(attacker,reflected,p.name+" 的反彈");
   }
+
+  if(p.curHp<=0 && p.rebirthOnce){p.curHp=1;p.rebirthOnce=false;log(`${p.name} 拒絕死亡，保留1 HP！`);showFullScreenEffect("☠","死亡拒絕","致命傷害被改寫為1 HP","ward");}
 
   if(p.curHp<=0 && p.decoy){
     p.curHp=1;
@@ -377,7 +385,7 @@ function damage(target,n,source="",options={}){
     showFullScreenEffect("🪞","替身","致命傷害被替身承受","ward");
   }
 
-  if(p.curHp<=0){
+  if(p.curHp<=0 && !S.resolving){
     endGame(target===S.player?S.enemy:S.player);
   }
 
@@ -397,254 +405,231 @@ function heal(p,n){
 }
 
 function removeNegative(p){
-  ["weakenDamage","nextTaken","poison","burn","reflect","healBlocked","skillBlocked","lastwall"].forEach(k=>delete p[k]);
+  ["weakenDamage","nextTaken","poison","burn","reflect","healBlocked","skillBlocked","lastwall","chaos","soulbind","attackLocked"].forEach(k=>delete p[k]);
 }
 
 /* ========================= CARD LOGIC ========================= */
 
 function canUseCard(c){
   if(S.phase!=="player")return false;
-  if(S.limit<=0)return false;
-  if(S.mana<c.cost && !S.player.forbiddenNext)return false;
+  if(S.playerTurnLimit<=0)return false;
+  const extra=S.player.soulbind?1:0;
+  if(S.mana<c.cost+extra && !S.player.forbiddenNext)return false;
   if(S.player.attackLocked && c.type==="攻擊")return false;
+  if(S.player.silencedCard===c.id)return false;
   if(c.id==="counterstrike" && S.player.curHp>=S.enemy.curHp)return false;
+  if(c.id==="thunder" && S.lastPlayerCard==="thunder")return false;
   return true;
 }
 
 function useCard(i){
   if(S.phase!=="player")return;
-  const id=S.hand[i];
-  const c=card(id);
-  if(!c || !canUseCard(c))return;
-
-  const before={
-    php:S.player.curHp, ehp:S.enemy.curHp,
-    ps:S.player.shield||0, es:S.enemy.shield||0,
-    mana:S.mana
-  };
+  const id=S.hand[i], c=card(id);
+  if(!c||!canUseCard(c))return;
+  const before={php:S.player.curHp,ehp:S.enemy.curHp,ps:S.player.shield||0,es:S.enemy.shield||0,mana:S.mana};
   const previousCard=S.lastPlayerCard;
-
+  S.lastPlayerSnapshot=snapshotBattle();
   S.hand.splice(i,1);
-  const free=S.player.forbiddenNext;
-  if(free)S.player.forbiddenNext=false;
-  else S.mana-=c.cost;
-
-  S.usedThisTurn=true;
-  S.lastPlayerCard=c.id;
-  S.player.previousCard=previousCard;
-  S.discard.push(c.id);
-  S.limit--;
-
+  const free=S.player.forbiddenNext; S.player.forbiddenNext=false;
+  const totalCost=free?0:c.cost+(S.player.soulbind?1:0);
+  if(totalCost)S.mana=Math.max(0,S.mana-totalCost);
+  S.usedThisTurn=true; S.lastPlayerCard=c.id; S.player.previousCard=previousCard; S.discard.push(c.id); if(S.player.id==='hades')S.player.stacks=(S.player.stacks||0)+1;
+  S.playerTurnLimit=Math.max(0,S.playerTurnLimit-1); S.limit=S.playerTurnLimit;
+  if(S.player.soulbind)delete S.player.soulbind;
   log(`你使用【${c.name}】。`);
-  resolve(c,S.player,S.enemy,true);
-
-  render();
-  showCast(c);
-
-  const effect=visualResult(c,before);
-  setTimeout(()=>playEffect(c.type,c.name,effect),160);
-
-  if(S.enemy.curHp<=0)return;
+  S.resolving=true; resolve(c,S.player,S.enemy,true); S.resolving=false;
+  if(S.player.curHp<=0){endGame(S.enemy);return;} if(S.enemy.curHp<=0){endGame(S.player);return;}
+  render(); showCast(c);
+  const effect=visualResult(c,before); setTimeout(()=>playEffect(c.type,c.name,effect),160);
 }
 
 /* 核心牌效果 */
+function cloneUnit(p){ return JSON.parse(JSON.stringify(p)); }
+function snapshotBattle(){
+  return {player:cloneUnit(S.player),enemy:cloneUnit(S.enemy),hand:[...S.hand],enemyHand:[...S.enemyHand],deck:[...S.deck],enemyDeck:[...S.enemyDeck],mana:S.mana,enemyMana:S.enemyMana,discard:[...S.discard],enemyDiscard:[...S.enemyDiscard],limit:S.playerTurnLimit,enemyLimit:S.enemyTurnLimit};
+}
+function restoreBattle(snap, keepEnemyCard=null){
+  S.player=snap.player; S.enemy=snap.enemy; S.hand=[...snap.hand]; S.enemyHand=[...snap.enemyHand]; S.deck=[...snap.deck]; S.enemyDeck=[...snap.enemyDeck]; S.mana=snap.mana; S.enemyMana=snap.enemyMana; S.discard=[...snap.discard]; S.enemyDiscard=[...snap.enemyDiscard]; S.playerTurnLimit=snap.limit; S.enemyTurnLimit=snap.enemyLimit;
+  if(keepEnemyCard){ const ix=S.enemyHand.indexOf(keepEnemyCard); if(ix>=0)S.enemyHand.splice(ix,1); S.enemyDiscard.push(keepEnemyCard); }
+}
+function handOf(me){return me===S.player?S.hand:S.enemyHand;}
+function deckOf(me){return me===S.player?S.deck:S.enemyDeck;}
+function discardOf(me){return me===S.player?S.discard:S.enemyDiscard;}
+function manaOf(me){return me===S.player?S.mana:S.enemyMana;}
+function setMana(me,v){if(me===S.player)S.mana=v;else S.enemyMana=v;}
+function drawFor(me,count=1,silent=false){
+  const out=[];
+  for(let i=0;i<count;i++){
+    const hand=handOf(me), discard=discardOf(me);
+    if(hand.length>=9)break;
+    let deck=deckOf(me);
+    if(!deck.length){
+      if(discard.length){
+        const fresh=shuffle(discard.splice(0));
+        if(me===S.player)S.deck=fresh; else S.enemyDeck=fresh;
+        log(`${me.name} 的牌庫耗盡，棄牌堆重新洗回牌庫。`);
+      }else{fatigue(me);break;}
+      deck=deckOf(me);
+    }
+    if(!deck.length)break;
+    const id=deck.pop(); hand.push(id); out.push(id);
+    if(me===S.player && !silent){S.pendingDraw=id;log(`你抽到了【${card(id).name}】。`);}
+  }
+  return out;
+}
+function clearTurnStatuses(p){
+  ['skillBlocked','silencedCard','chaos','attackLocked','turnLimit','soulbind'].forEach(k=>delete p[k]);
+  delete p.lastwall;
+  delete p.dodge;
+  delete p.domain;
+}
+function applyStartOfTurn(p){
+  p.turnLimit=99;
+  if(p.nextSkillBlocked){p.skillBlocked=1;delete p.nextSkillBlocked;}
+  if(p.nextAttackLocked){p.attackLocked=true;delete p.nextAttackLocked;}
+  if(p.pact){
+    const m=p===S.player?S.mana:S.enemyMana;
+    setMana(p,Math.max(0,m-2));
+    delete p.pact;
+    log(`${p.name} 的神之契約反噬：失去2神力。`);
+  }
+  if(p.poison){damage(p,1,'中毒');p.poison--;}
+  if(p.burn){damage(p,p.burn,'灼熱');p.burn=0;}
+  if(p.domainTurns){p.domain=true;}
+}
 function resolve(c,me,op,isPlayer){
+  const hand=handOf(me), opponentHand=handOf(op);
   const atk=(n,opt={})=>{
-    let bonus=me.nextAtk||0;
-    me.nextAtk=0;
-    damage(op,n+bonus,me.name,opt);
+    let bonus=me.nextAtk||0; me.nextAtk=0;
+    let amount=n+bonus;
+    if(op.chaos){
+      delete op.chaos;
+      if(Math.random()<0.5){
+        log(`混亂生效：${me.name} 的攻擊反噬自己。`);
+        damage(me,amount,me.name+' 混亂反噬');
+        return;
+      }
+    }
+    if(me.id==='zeus' && c.type==='攻擊' && !me.zeusPassiveUsed && Math.random()<0.5){amount+=2;me.zeusPassiveUsed=true;log('宙斯被動：雷霆加護 +2。');}
+    damage(op,amount,me.name,opt);
   };
-
-  if(c.type==="攻擊"){
-    if(c.id==="strike")atk(4);
-    else if(c.id==="fire"){atk(3);op.burn=1;}
-    else if(c.id==="pierce")atk(4,{ignoreShield:true});
-    else if(c.id==="double"){damage(op,2,me.name);damage(op,2,me.name);}
-    else if(c.id==="crush"){atk(6);damage(me,1,me.name+" 反噬");}
-    else if(c.id==="soul"){atk(4);op.healBlocked=true;}
-    else if(c.id==="thunder"){
-      if(S.player.previousCard==="thunder"){log("雷霆貫穿：連續攻擊不能使用。");return;}
-      atk(7);
-    }
-    else if(c.id==="backstab")atk(S.enemyUsedSkill||S.enemyHand.length<9?5:2);
-    if(me.id==="thor")me.stacks=Math.min(3,(me.stacks||0)+1);
-  }
-
-  else if(c.type==="防禦"){
-    if(c.id==="shield")me.shield+=4;
-    else if(c.id==="light")me.shield+=6;
-    else if(c.id==="mirror"){me.shield+=3;me.reflect=3;}
-    else if(c.id==="dodge")me.dodge=1;
-    else if(c.id==="lastwall")me.lastwall=1;
-  }
-
-  else if(c.type==="恢復"){
-    if(c.id==="gift")heal(me,6);
-    else if(c.id==="rebirth")heal(me,me.curHp<=8?7:3);
-    else if(c.id==="moonbless"){heal(me,2);drawPlayer()}
+  if(c.type==='攻擊'){
+    if(c.id==='strike')atk(4);
+    else if(c.id==='fire'){atk(3);op.burn=1;}
+    else if(c.id==='pierce')atk(4,{shieldPierce:1});
+    else if(c.id==='double'){atk(2); if(op.curHp>0)atk(2);}
+    else if(c.id==='crush'){atk(6);damage(me,1,me.name+' 反噬');}
+    else if(c.id==='soul'){atk(4);op.healBlocked=1;}
+    else if(c.id==='thunder')atk(7);
+    else if(c.id==='backstab')atk(op.usedThisTurn?5:2);
+    if(me.id==='thor')me.stacks=Math.min(3,(me.stacks||0)+1);
+  } else if(c.type==='防禦'){
+    if(c.id==='shield')me.shield=(me.shield||0)+4;
+    else if(c.id==='light')me.shield=(me.shield||0)+6;
+    else if(c.id==='mirror'){me.shield=(me.shield||0)+3;me.reflect=3;}
+    else if(c.id==='dodge')me.dodge=1;
+    else if(c.id==='lastwall')me.lastwall=1;
+  } else if(c.type==='恢復'){
+    if(c.id==='gift')heal(me,6);
+    else if(c.id==='rebirth')heal(me,me.curHp<=8?7:3);
+    else if(c.id==='moonbless'){heal(me,2);drawFor(me,1);}
     else heal(me,4);
-  }
-
-  else if(c.type==="控制"){
-    if(c.id==="seal")op.skillBlocked=1;
-    else if(c.id==="silence"){
-      if(op.hand.length){
-        const ix=Math.floor(Math.random()*op.hand.length);
-        op.silencedCard=op.hand[ix];
-        log(`【${card(op.silencedCard).name}】被沉默。`);
-      }
+  } else if(c.type==='控制'){
+    if(c.id==='seal')op.skillBlocked=1;
+    else if(c.id==='silence'){
+      if(opponentHand.length){const ix=Math.floor(Math.random()*opponentHand.length);op.silencedCard=opponentHand[ix];log(`【${card(op.silencedCard).name}】被沉默，持續至對方本回合結束。`);}
+    } else if(c.id==='chaos')op.chaos=1;
+    else if(c.id==='timestop')op.turnLimit=1;
+    else if(c.id==='rewind'){
+      const snap=isPlayer?S.lastEnemySnapshot:S.lastPlayerSnapshot;
+      const id=isPlayer?S.lastEnemyCard:S.lastPlayerCard;
+      if(snap && id){
+        const currentMeHand=[...handOf(me)], currentMeDiscard=[...discardOf(me)], currentMeMana=manaOf(me), currentLimit=isPlayer?S.playerTurnLimit:S.enemyTurnLimit;
+        restoreBattle(snap,isPlayer?id:null);
+        if(isPlayer){S.hand=currentMeHand;S.discard=currentMeDiscard;S.mana=currentMeMana;S.playerTurnLimit=currentLimit;S.limit=currentLimit;S.lastEnemyCard=null;S.lastEnemySnapshot=null;}
+        else {S.enemyHand=currentMeHand;S.enemyDiscard=currentMeDiscard;S.enemyMana=currentMeMana;S.enemyTurnLimit=currentLimit;S.lastPlayerCard=null;S.lastPlayerSnapshot=null;}
+        log(`命運逆轉：撤銷上一張【${card(id).name}】的效果。`);
+      } else log('命運逆轉沒有可撤銷的上一張牌。');
     }
-    else if(c.id==="chaos")op.chaos=1;
-    else if(c.id==="timestop")S.limit=1;
-    else if(c.id==="rewind"){
-      const last=S.lastEnemyCard;
-      if(last)log(`命運逆轉：取消上一張【${card(last).name}】的後續效果。`);
-    }
-  }
-
-  else if(c.type==="手牌"){
-    if(c.id==="steal" && S.enemyHand.length){
-      const ix=Math.floor(Math.random()*S.enemyHand.length);
-      S.hand.push(S.enemyHand.splice(ix,1)[0]);
-    }
-    else if(c.id==="peek"){
-      const shown=shuffle(S.enemyHand).slice(0,3).map(id=>card(id).name).join("、");
-      log(`窺視：對手手牌 ${shown||"空"}。`);
-    }
-    else if(c.id==="swap" && S.enemyHand.length){
-      const a=S.hand.length?S.hand[S.hand.length-1]:null;
-      const b=S.enemyHand[Math.floor(Math.random()*S.enemyHand.length)];
-      if(a){
-        S.hand[S.hand.length-1]=b;
-        S.enemyHand[S.enemyHand.indexOf(b)]=a;
-      }
-    }
-    else if(c.id==="sacrifice"){
-      if(S.hand.length){
-        const lost=S.hand.pop();
-        S.discard.push(lost);
-        drawPlayer();drawPlayer();
-      }
-    }
-    else if(c.id==="dice"){
-      const r=Math.floor(Math.random()*4);
-      if(r===0){drawPlayer();drawPlayer();}
-      else if(r===1)heal(me,4);
-      else if(r===2)damage(op,4,me.name);
-      else S.mana=Math.min(6,S.mana+3);
-    }
-  }
-
-  else if(c.type==="詛咒"){
-    if(c.id==="curse")op.nextTaken=(op.nextTaken||0)+2;
-    else if(c.id==="poison")op.poison=3;
-    else if(c.id==="burn")op.burn=3;
-    else if(c.id==="soulbind")op.soulbind=1;
-    else if(c.id==="weaken")op.weakenDamage=3;
-  }
-
-  else if(c.type==="神力"){
-    if(c.id==="infuse")S.mana=Math.min(6,S.mana+2);
-    else if(c.id==="pact"){S.mana=Math.min(6,S.mana+4);me.pact=1;}
-    else if(c.id==="wrath")me.nextAtk=(me.nextAtk||0)+4;
-  }
-
-  else if(c.type==="特殊"){
-    if(c.id==="decoy")me.decoy=true;
-    else if(c.id==="rollback")me.curHp=Math.min(me.hp,S.turnStartHp);
-    else if(c.id==="stealfate" && S.lastEnemyCard){
-      const copied=card(S.lastEnemyCard);
-      log(`命運竊取：模仿【${copied.name}】。`);
-      resolve(copied,me,op,isPlayer);
-    }
-    else if(c.id==="mirrorcard" && S.lastPlayerCard && S.lastPlayerCard!==c.id){
-      const copied=card(S.lastPlayerCard);
-      log(`鏡像：再次施放【${copied.name}】。`);
-      resolve(copied,me,op,isPlayer);
-    }
-    else if(c.id==="forbidden")me.forbiddenNext=true;
-  }
-
-  else if(c.type==="傳說"){
-    if(c.id==="ragnarok"){
-      damage(me,5,"諸神黃昏",{ignoreShield:true});
-      damage(op,5,"諸神黃昏",{ignoreShield:true});
-    }
-    else if(c.id==="rewrite"){
-      const mid=Math.min(me.curHp,op.curHp);
-      me.curHp=Math.max(1,Math.min(me.hp,mid+2));
-      op.curHp=Math.max(1,Math.min(op.hp,mid-3));
-    }
-    else if(c.id==="judgment"){atk(10);me.skillBlocked=1;}
-    else if(c.id==="chaosfall"){
-      for(let k=0;k<2;k++){
-        if(S.hand.length){const x=S.hand.pop();S.discard.push(x);}
-        if(S.enemyHand.length)S.enemyHand.pop();
-      }
-      drawPlayer();drawPlayer();
-      drawEnemy();drawEnemy();
-    }
-    else if(c.id==="counterstrike")atk(Math.min(7,Math.max(1,Math.floor((op.curHp-me.curHp)/2))));
-    else if(c.id==="deathrefuse")me.decoy=true;
-    else if(c.id==="allone"){removeNegative(me);heal(me,5);}
-    else if(c.id==="coin"){
-      if(Math.random()<.5)atk(8);
-      else damage(me,4,me.name+" 命運硬幣");
-    }
-    else if(c.id==="domain"){me.domain=1;op.domain=1;}
-    else if(c.id==="endbell")S.limit=1;
+  } else if(c.type==='手牌'){
+    if(c.id==='steal' && opponentHand.length){const ix=Math.floor(Math.random()*opponentHand.length);hand.push(opponentHand.splice(ix,1)[0]);}
+    else if(c.id==='peek'){const shown=shuffle(opponentHand).slice(0,3).map(id=>card(id).name).join('、');log(`窺視：對手手牌 ${shown||'空'}。`);}
+    else if(c.id==='swap' && opponentHand.length && hand.length){const a=hand[hand.length-1];const ix=Math.floor(Math.random()*opponentHand.length);const b=opponentHand[ix];hand[hand.length-1]=b;opponentHand[ix]=a;}
+    else if(c.id==='sacrifice' && hand.length){const lost=hand.pop();discardOf(me).push(lost);drawFor(me,2);}
+    else if(c.id==='dice'){const r=Math.floor(Math.random()*4);if(r===0)drawFor(me,2);else if(r===1)heal(me,4);else if(r===2)damage(op,4,me.name);else setMana(me,Math.min(6,manaOf(me)+3));}
+  } else if(c.type==='詛咒'){
+    if(c.id==='curse')op.nextTaken=(op.nextTaken||0)+2;
+    else if(c.id==='poison')op.poison=3;
+    else if(c.id==='burn')op.burn=3;
+    else if(c.id==='soulbind')op.soulbind=1;
+    else if(c.id==='weaken')op.weakenDamage=3;
+  } else if(c.type==='神力'){
+    if(c.id==='infuse')setMana(me,Math.min(6,manaOf(me)+2));
+    else if(c.id==='pact'){setMana(me,Math.min(6,manaOf(me)+4));me.pact=1;}
+    else if(c.id==='wrath')me.nextAtk=(me.nextAtk||0)+4;
+  } else if(c.type==='特殊'){
+    if(c.id==='decoy')me.decoy=true;
+    else if(c.id==='rollback')me.curHp=Math.min(me.hp,me.turnStartHp);
+    else if(c.id==='stealfate' && (isPlayer?S.lastEnemyCard:S.lastPlayerCard)){const copied=card(isPlayer?S.lastEnemyCard:S.lastPlayerCard);log(`命運竊取：模仿【${copied.name}】。`);resolve(copied,me,op,isPlayer);}
+    else if(c.id==='mirrorcard' && (isPlayer?S.lastPlayerCard:S.lastEnemyCard) && (isPlayer?S.lastPlayerCard:S.lastEnemyCard)!=='mirrorcard'){const copied=card(isPlayer?S.lastPlayerCard:S.lastEnemyCard);log(`鏡像：再次施放【${copied.name}】。`);resolve(copied,me,op,isPlayer);}
+    else if(c.id==='forbidden')me.forbiddenNext=true;
+  } else if(c.type==='傳說'){
+    if(c.id==='ragnarok'){damage(me,5,'諸神黃昏',{ignoreShield:true});if(op.curHp>0)damage(op,5,'諸神黃昏',{ignoreShield:true});}
+    else if(c.id==='rewrite'){const center=(me.curHp+op.curHp)/2;let low=Math.round(center-2.5);let high=low+5;low=Math.max(1,low);high=Math.max(1,high);me.curHp=Math.min(me.hp,high);op.curHp=Math.min(op.hp,low);}
+    else if(c.id==='judgment'){atk(10);me.nextSkillBlocked=true;}
+    else if(c.id==='chaosfall'){for(let k=0;k<2;k++){if(hand.length){const x=hand.pop();discardOf(me).push(x);}if(opponentHand.length){const x=opponentHand.pop();discardOf(op).push(x);}}drawFor(me,2);drawFor(op,2);}
+    else if(c.id==='counterstrike')atk(Math.min(7,Math.max(1,Math.ceil((op.curHp-me.curHp)/2))));
+    else if(c.id==='deathrefuse')me.rebirthOnce=true;
+    else if(c.id==='allone'){removeNegative(me);heal(me,5);}
+    else if(c.id==='coin'){if(Math.random()<0.5)atk(8);else damage(me,4,me.name+' 命運硬幣');}
+    else if(c.id==='domain'){S.domainTurns=2;me.domain=true;op.domain=true;}
+    else if(c.id==='endbell')op.turnLimit=1;
   }
 }
 
 /* ========================= SKILLS ========================= */
 
 function useSkill(){
-  if(S.phase!=="player"||S.mana<S.player.skillCost||S.skillCooldown>0||S.player.skillBlocked)return;
-
-  const before={php:S.player.curHp,ehp:S.enemy.curHp,ps:S.player.shield||0,es:S.enemy.shield||0};
-  S.mana-=S.player.skillCost;
-  S.skillCooldown=2;
-  S.playerUsedSkill=true;
-  S.player.usedSkill=true;
-
-  const id=S.player.id;
-
-  if(id==="nuwa")heal(S.player,5);
-  else if(id==="amaterasu"){heal(S.player,4);S.player.nextTaken=(S.player.nextTaken||0)-0;}
-  else if(id==="izanagi")heal(S.player,3);
-  else if(id==="houyi"){damage(S.enemy,8,S.player.name);S.player.attackLocked=1;}
-  else if(id==="anubis")damage(S.enemy,S.enemy.curHp<=8?8:4,S.player.name);
-  else if(id==="medusa")S.limit=1;
-  else if(id==="loki")S.enemy.reflect=1;
-  else if(id==="freya")S.enemy.weakenDamage=4;
-  else if(id==="morrigan")S.enemy.nextTaken=(S.enemy.nextTaken||0)+3;
-  else if(id==="shiva"){damage(S.enemy,6+(S.player.stacks||0),S.player.name);S.player.stacks=0;}
-  else if(id==="thor"){damage(S.enemy,5+(S.player.stacks||0),S.player.name);S.player.stacks=0;}
-  else if(id==="hades"){damage(S.enemy,(S.player.stacks||0)*2,S.player.name);S.player.stacks=0;}
-  else if(id==="gilgamesh")damage(S.enemy,5+(S.enemyUsedSkill?3:0),S.player.name);
-  else if(id==="susanoo")damage(S.enemy,S.player.curHp<=12?10:8,S.player.name);
-  else if(id==="nezha")damage(S.enemy,5+(S.usedThisTurn?2:0),S.player.name);
-  else if(id==="wukong")damage(S.enemy,S.enemy.shield>0?4:6,S.player.name);
-  else if(id==="erlang")damage(S.enemy,5+(S.lastEnemyCard&&card(S.lastEnemyCard).type==="攻擊"?2:0),S.player.name);
-  else if(id==="chang_e"){if(S.enemyHand.length)S.enemyHand.splice(Math.floor(Math.random()*S.enemyHand.length),1);}
-  else if(id==="jingwei"){damage(S.enemy,S.player.stacks||0,S.player.name);S.player.stacks=0;}
-  else if(id==="zhongkui"){damage(S.enemy,4,S.player.name);removeNegative(S.player);}
-  else if(id==="tsukuyomi"){if(S.enemyHand.length>3)S.enemyHand.splice(Math.floor(Math.random()*S.enemyHand.length),1);else damage(S.enemy,3,S.player.name);}
-  else if(id==="hanuman")S.player.shield+=4;
-  else if(id==="garuda"){damage(S.enemy,5,S.player.name);S.enemy.shield=0;}
-  else if(id==="zeus")damage(S.enemy,7,S.player.name);
-  else if(id==="athena"){S.player.shield+=3;S.player.reflect=3;}
-  else if(id==="heracles")damage(S.enemy,4+(S.player.trial||0),S.player.name);
-  else if(id==="loki")S.enemy.reflect=1;
-  else if(id==="odin"){if(S.hand.length){S.discard.push(S.hand.pop());drawPlayer();drawPlayer();}}
-  else if(id==="ra"){damage(S.enemy,6,S.player.name);S.enemy.burn=2;}
-  else if(id==="osiris"){const pick=S.discard.find(x=>card(x).cost<=2);if(pick){S.discard.splice(S.discard.indexOf(pick),1);S.hand.push(pick);}}
-  else if(id==="morrigan")S.enemy.nextTaken=(S.enemy.nextTaken||0)+3;
-  else if(id==="cernunnos"){damage(S.enemy,4,S.player.name);heal(S.player,4);}
-
-  log(`你發動【${S.player.skill}】。`);
+  const p=S.player,o=S.enemy;
+  if(S.phase!=="player"||S.mana<p.skillCost||S.skillCooldown>0||p.skillBlocked)return;
+  if(p.id==="nuwa" && (p.skillUses||0)>=2)return;
+  const before={php:p.curHp,ehp:o.curHp,ps:p.shield||0,es:o.shield||0};
+  S.mana-=p.skillCost; S.skillCooldown=2; S.playerUsedSkill=true; p.usedSkill=true; p.skillUses=(p.skillUses||0)+1;
+  const id=p.id;
+  if(id==="nezha")damage(o,5+(S.usedThisTurn?2:0),p.name);
+  else if(id==="wukong")damage(o,o.shield>0?4:6,p.name);
+  else if(id==="erlang")damage(o,5+(S.lastEnemyCard&&card(S.lastEnemyCard).type==="攻擊"?2:0),p.name);
+  else if(id==="nuwa")heal(p,5);
+  else if(id==="chang_e"){if(S.enemyHand.length){const ix=Math.floor(Math.random()*S.enemyHand.length);const locked=S.enemyHand[ix];o.silencedCard=locked;log(`廣寒封印：對手的【${card(locked).name}】本回合不可使用。`);}}
+  else if(id==="houyi"){damage(o,8,p.name);p.nextAttackLocked=true;}
+  else if(id==="jingwei"){damage(o,p.stacks||0,p.name);p.stacks=0;}
+  else if(id==="zhongkui"){damage(o,4,p.name);removeNegative(p);}
+  else if(id==="amaterasu"){heal(p,4);p.nextTaken=-3;}
+  else if(id==="susanoo")damage(o,p.curHp<=12?10:8,p.name);
+  else if(id==="tsukuyomi"){if(S.enemyHand.length>3){const x=S.enemyHand.splice(Math.floor(Math.random()*S.enemyHand.length),1)[0];S.enemyDiscard.push(x);}else damage(o,3,p.name);}
+  else if(id==="izanagi"){heal(p,3);removeNegative(p);}
+  else if(id==="hanuman")p.shield=(p.shield||0)+4;
+  else if(id==="shiva"){damage(o,6+(p.stacks||0),p.name);p.stacks=0;}
+  else if(id==="garuda"){damage(o,5,p.name);o.shield=0;}
+  else if(id==="zeus")damage(o,7,p.name);
+  else if(id==="athena"){p.nextTaken=-3;p.reflect=3;}
+  else if(id==="hades"){const souls=p.stacks||0;if(souls)damage(o,souls*2,p.name);p.stacks=0;}
+  else if(id==="medusa")o.turnLimit=1;
+  else if(id==="heracles")damage(o,4+(p.trial||0),p.name);
+  else if(id==="loki")o.reflect=1;
+  else if(id==="thor"){damage(o,5+(p.stacks||0),p.name);p.stacks=0;}
+  else if(id==="odin"){if(S.hand.length){S.discard.push(S.hand.pop());drawFor(p,2);}}
+  else if(id==="freya")o.weakenDamage=4;
+  else if(id==="anubis")damage(o,o.curHp<=8?8:4,p.name);
+  else if(id==="ra"){damage(o,6,p.name);o.burn=2;}
+  else if(id==="osiris"){const ix=S.discard.findIndex(x=>card(x).cost<=2);if(ix>=0){const x=S.discard.splice(ix,1)[0];S.hand.push(x);}}
+  else if(id==="morrigan")o.nextTaken=(o.nextTaken||0)+3;
+  else if(id==="gilgamesh")damage(o,5+(S.enemyUsedSkill?3:0),p.name);
+  else if(id==="cernunnos"){damage(o,4,p.name);heal(p,4);}
+  log(`你發動【${p.skill}】。`);
+  if(p.curHp<=0){endGame(o);return;} if(o.curHp<=0){endGame(p);return;}
   render();
-  playEffect("技能",S.player.skill,visualResult({type:"技能",name:S.player.skill},before));
+  playEffect("技能",p.skill,visualResult({type:"技能",name:p.skill},before));
 }
 
 function skillUI(p){
@@ -661,6 +646,7 @@ function skillUI(p){
 
 function endTurn(){
   if(S.phase!=="player")return;
+  clearTurnStatuses(S.player);
   S.phase="enemy";
   log(`第${S.turn}回合結束。`);
   enemyTurn();
@@ -668,132 +654,102 @@ function endTurn(){
 
 function enemyTurn(){
   if(S.enemy.curHp<=0)return;
-
   S.enemyMana=Math.min(6,S.enemyMana+3);
   S.enemySkillCooldown=Math.max(0,S.enemySkillCooldown-1);
-
-  if(S.enemy.burn){damage(S.enemy,S.enemy.burn,"灼熱");S.enemy.burn=0;}
-  if(S.enemy.poison){damage(S.enemy,1,"中毒");S.enemy.poison--;}
-  if(S.enemy.pact){S.enemyMana=Math.max(0,S.enemyMana-2);S.enemy.pact=0;}
-
-  let played=0;
-  const use=(ix)=>{if(ix<0)return false;enemyUse(ix);played++;return true;};
-
-  if(S.enemy.curHp<=8){
-    let ix=S.enemyHand.findIndex(id=>["spring","gift","rebirth","allone"].includes(id)&&card(id).cost<=S.enemyMana);
-    if(use(ix)){}
+  S.enemy.turnStartHp=S.enemy.curHp;
+  applyStartOfTurn(S.enemy);
+  S.enemyTurnLimit=S.enemy.turnLimit||99;
+  S.lastEnemyCard=null;S.enemy.usedThisTurn=false;
+  let acted=false;
+  if(S.enemyTurnLimit>0){
+    const ix=chooseEnemyCard();
+    if(ix>=0) acted=enemyUse(ix);
   }
-  if(!played){
-    let ix=S.enemyHand.findIndex(id=>card(id).type==="攻擊"&&card(id).cost<=S.enemyMana);
-    use(ix);
-  }
-  if(!played){
-    let ix=S.enemyHand.findIndex(id=>card(id).type==="防禦"&&card(id).cost<=S.enemyMana);
-    use(ix);
-  }
-  if(!played && S.enemyMana>=S.enemy.skillCost && S.enemySkillCooldown===0 && !S.enemy.skillBlocked){
-    enemySkill();played++;
-  }
-  if(!played){
-    const ix=S.enemyHand.findIndex(id=>card(id).cost<=S.enemyMana);
-    use(ix);
-  }
-
+  if(!acted && S.enemyMana>=S.enemy.skillCost && S.enemySkillCooldown===0 && !S.enemy.skillBlocked){enemySkill();}
+  clearTurnStatuses(S.enemy);
+  if(S.domainTurns>0){S.domainTurns--;if(S.domainTurns<=0){delete S.player.domain;delete S.enemy.domain;}}
   startPlayerTurn();
 }
-
+function cardThreat(c,me,op){
+  if(!c)return -999;
+  const mana=manaOf(me), extra=me.soulbind?1:0;
+  if(mana<c.cost+extra && !me.forbiddenNext)return -999;
+  if(me.silencedCard===c.id)return -999;
+  if(c.id==='counterstrike' && me.curHp>=op.curHp)return -999;
+  let v=0;
+  if(c.type==='攻擊'){const base={strike:4,fire:3,pierce:4,double:4,crush:6,soul:4,thunder:7,backstab:3}[c.id]||3;v+=base*2;if(op.curHp<=base+1)v+=25;if(op.shield&&c.id==='pierce')v+=7;}
+  if(c.type==='恢復')v+=me.curHp<me.hp*.55?18:2;
+  if(c.type==='防禦')v+=me.curHp<me.hp*.45?12:3;
+  if(c.type==='控制')v+=7;
+  if(c.type==='詛咒')v+=6;
+  if(c.type==='特殊')v+=5;
+  if(c.type==='傳說')v+=11;
+  return v-c.cost*1.25+Math.random()*2;
+}
+function chooseEnemyCard(){
+  const candidates=S.enemyHand.map((id,i)=>({i,c:card(id),v:cardThreat(card(id),S.enemy,S.player)})).filter(x=>x.v>-900);
+  if(!candidates.length)return -1;
+  candidates.sort((a,b)=>b.v-a.v);return candidates[0].i;
+}
 function enemyUse(ix){
-  const id=S.enemyHand[ix];
-  const c=card(id);
-  if(S.enemy.silencedCard===id){
-    log(`對手的【${c.name}】仍在沉默中。`);
-    return;
-  }
-
+  if(ix<0||ix>=S.enemyHand.length)return false;
+  const id=S.enemyHand[ix],c=card(id);
+  if(S.enemy.silencedCard===id)return false;
+  const totalCost=c.cost+(S.enemy.soulbind?1:0);
+  if(S.enemyMana<totalCost&&!S.enemy.forbiddenNext)return false;
+  S.lastEnemySnapshot=snapshotBattle();
   S.enemyHand.splice(ix,1);
-  S.enemyMana=Math.max(0,S.enemyMana-c.cost);
-  S.enemyUsedSkill=false;
-  S.lastEnemyCard=c.id;
-  S.discard.push(c.id);
-
+  const free=S.enemy.forbiddenNext;S.enemy.forbiddenNext=false;
+  if(!free)S.enemyMana=Math.max(0,S.enemyMana-totalCost);
+  S.lastEnemyCard=c.id;S.enemy.usedThisTurn=true;S.enemyDiscard.push(c.id);if(S.enemy.id==='hades')S.enemy.stacks=(S.enemy.stacks||0)+1;S.enemyTurnLimit=Math.max(0,S.enemyTurnLimit-1);S.enemy.turnLimit=S.enemyTurnLimit;
+  if(S.enemy.soulbind)delete S.enemy.soulbind;
   log(`對手使用【${c.name}】。`);
-  resolveEnemy(c);
+  S.resolving=true; resolve(c,S.enemy,S.player,false); S.resolving=false;
+  if(S.player.curHp<=0){endGame(S.enemy);return true;} if(S.enemy.curHp<=0){endGame(S.player);return true;}
+  return true;
 }
-
-function resolveEnemy(c){
-  if(c.type==="攻擊"){
-    const n={strike:4,fire:3,pierce:4,double:4,crush:6,soul:4,thunder:7,backstab:3}[c.id]||3;
-    damagePlayer(n);
-    if(c.id==="fire")S.player.burn=1;
-  }
-  else if(c.type==="防禦"){
-    S.enemy.shield+=c.id==="light"?6:c.id==="shield"?4:3;
-  }
-  else if(c.type==="恢復")heal(S.enemy,c.id==="gift"?6:c.id==="rebirth"?(S.enemy.curHp<=8?7:3):4);
-  else if(c.type==="神力")S.enemyMana=Math.min(6,S.enemyMana+(c.id==="infuse"?2:c.id==="pact"?4:0));
-  else if(c.type==="詛咒"){
-    if(c.id==="curse")S.player.nextTaken=(S.player.nextTaken||0)+2;
-    if(c.id==="poison")S.player.poison=3;
-    if(c.id==="burn")S.player.burn=3;
-    if(c.id==="weaken")S.player.weakenDamage=3;
-  }
-}
-
-function damagePlayer(n){
-  if(S.player.dodge){
-    S.player.dodge=0;
-    if(Math.random()<.5){
-      log("閃避成功！");
-      showFullScreenEffect("🌪","閃避","攻擊完全落空","dodge");
-      return;
-    }
-  }
-
-  if(S.player.weakenDamage){
-    n=Math.max(0,n-S.player.weakenDamage);
-    S.player.weakenDamage=0;
-  }
-
-  damage(S.player,n,S.enemy.name);
-}
-
 function enemySkill(){
-  S.enemyMana-=S.enemy.skillCost;
-  S.enemySkillCooldown=2;
-  S.enemyUsedSkill=true;
-
-  const id=S.enemy.id;
-  if(["nuwa","amaterasu","cernunnos"].includes(id))heal(S.enemy,5);
-  else if(id==="houyi")damage(S.player,8,S.enemy.name);
-  else if(id==="susanoo")damage(S.player,S.enemy.curHp<=12?10:8,S.enemy.name);
-  else if(id==="zeus")damage(S.player,7,S.enemy.name);
-  else if(id==="thor")damage(S.player,5,S.enemy.name);
-  else if(id==="anubis")damage(S.player,S.player.curHp<=8?8:4,S.enemy.name);
-  else damage(S.player,5,S.enemy.name);
-
-  log(`對手發動【${S.enemy.skill}】。`);
-  showFullScreenEffect("✦","敵方技能",S.enemy.skill,"enemy-skill");
+  const p=S.enemy,o=S.player;
+  if(p.id==='nuwa'&&(p.skillUses||0)>=2)return;
+  S.enemyMana-=p.skillCost;S.enemySkillCooldown=2;S.enemyUsedSkill=true;p.skillUses=(p.skillUses||0)+1;
+  const id=p.id;
+  if(id==='nezha')damage(o,5+(p.usedThisTurn?2:0),p.name);
+  else if(id==='wukong')damage(o,o.shield>0?4:6,p.name);
+  else if(id==='erlang')damage(o,5+(S.lastPlayerCard&&card(S.lastPlayerCard).type==='攻擊'?2:0),p.name);
+  else if(id==='nuwa')heal(p,5);
+  else if(id==='houyi'){damage(o,8,p.name);p.nextAttackLocked=true;}
+  else if(id==='jingwei'){damage(o,p.stacks||0,p.name);p.stacks=0;}
+  else if(id==='zhongkui'){damage(o,4,p.name);removeNegative(p);}
+  else if(id==='amaterasu'){heal(p,4);p.nextTaken=-3;}
+  else if(id==='susanoo')damage(o,p.curHp<=12?10:8,p.name);
+  else if(id==='tsukuyomi'){if(S.hand.length>3){const x=S.hand.splice(Math.floor(Math.random()*S.hand.length),1)[0];S.discard.push(x);}else damage(o,3,p.name);}
+  else if(id==='izanagi'){heal(p,3);removeNegative(p);}
+  else if(id==='hanuman')p.shield=(p.shield||0)+4;
+  else if(id==='shiva'){damage(o,6+(p.stacks||0),p.name);p.stacks=0;}
+  else if(id==='garuda'){damage(o,5,p.name);o.shield=0;}
+  else if(id==='zeus')damage(o,7,p.name);
+  else if(id==='athena'){p.nextTaken=-3;p.reflect=3;}
+  else if(id==='hades'){const souls=p.stacks||0;if(souls)damage(o,souls*2,p.name);p.stacks=0;}
+  else if(id==='medusa')o.turnLimit=1;
+  else if(id==='heracles')damage(o,4+(p.trial||0),p.name);
+  else if(id==='loki')o.reflect=1;
+  else if(id==='thor'){damage(o,5+(p.stacks||0),p.name);p.stacks=0;}
+  else if(id==='odin'){if(S.enemyHand.length){S.enemyDiscard.push(S.enemyHand.pop());drawFor(p,2);}}
+  else if(id==='freya')o.weakenDamage=4;
+  else if(id==='anubis')damage(o,o.curHp<=8?8:4,p.name);
+  else if(id==='ra'){damage(o,6,p.name);o.burn=2;}
+  else if(id==='osiris'){const ix=S.enemyDiscard.findIndex(x=>card(x).cost<=2);if(ix>=0){const x=S.enemyDiscard.splice(ix,1)[0];S.enemyHand.push(x);}}
+  else if(id==='morrigan')o.nextTaken=(o.nextTaken||0)+3;
+  else if(id==='gilgamesh')damage(o,5+(S.playerUsedSkill?3:0),p.name);
+  else if(id==='cernunnos'){damage(o,4,p.name);heal(p,4);}
+  log(`對手發動【${p.skill}】。`);showFullScreenEffect('✦','敵方技能',p.skill,'enemy-skill');
+  if(p.curHp<=0){endGame(o);} else if(o.curHp<=0){endGame(p);}
 }
-
 function startPlayerTurn(){
   if(S.player.curHp<=0)return;
-
-  S.turn++;
-  S.phase="player";
-  S.mana=Math.min(6,S.mana+3);
-  S.skillCooldown=Math.max(0,S.skillCooldown-1);
-  S.usedThisTurn=false;
-  S.turnStartHp=S.player.curHp;
-  S.limit=99;
-  S.player.attackLocked=false;
-
-  if(S.player.poison){damage(S.player,1,"中毒");S.player.poison--;}
-  if(S.player.burn){damage(S.player,S.player.burn,"灼熱");S.player.burn=0;}
-  if(S.player.pact){S.mana=Math.max(0,S.mana-2);S.player.pact=0;}
-
-  const drawn=drawPlayer();
-  render();
-  if(drawn)setTimeout(()=>showTurnDraw(card(drawn)),180);
+  S.turn++;S.phase='player';S.mana=Math.min(6,S.mana+3);S.skillCooldown=Math.max(0,S.skillCooldown-1);S.usedThisTurn=false;S.playerUsedSkill=false;S.player.usedThisTurn=false;
+  S.player.turnStartHp=S.player.curHp;S.turnStartHp=S.player.curHp;applyStartOfTurn(S.player);S.playerTurnLimit=S.player.turnLimit||99;S.limit=S.playerTurnLimit;
+  const drawn=drawPlayer();render();if(drawn)setTimeout(()=>showTurnDraw(card(drawn)),180);
 }
 
 /* ========================= VISUALS ========================= */
@@ -811,7 +767,7 @@ function cardVisual(c){
 function cardUI(c,i){
   const v=cardVisual(c);
   const disabled=!canUseCard(c);
-  return `<article class="card ${disabled?"disabled":""}" onclick="useCard(${i})" style="--card-h:${CARD_HUE[c.id]??210}">
+  return `<article class="card rarity-${c.rarity} type-${c.type} ${disabled?"disabled":""}" onclick="useCard(${i})" style="--card-h:${CARD_HUE[c.id]??210}">
     <span class="rarity">${c.rarity}</span>
     <span class="cost">${c.cost}</span>
     <div class="type">${c.type}</div>
@@ -867,6 +823,23 @@ function visualResult(c,before){
   };
 }
 
+function targetImpact(target, kind="damage", value=null){
+  const el=document.querySelector(target);
+  if(!el)return;
+  el.classList.remove("target-hit","target-heal","target-shield","target-skill");
+  void el.offsetWidth;
+  const cls=kind==="heal"?"target-heal":kind==="shield"?"target-shield":kind==="skill"?"target-skill":"target-hit";
+  el.classList.add(cls);
+  if(value!==null){
+    const n=document.createElement("div");
+    n.className=`combat-number ${kind}`;
+    n.textContent=(kind==="damage"?"-":kind==="heal"||kind==="shield"?"+":"")+value;
+    el.appendChild(n);
+    setTimeout(()=>n.remove(),900);
+  }
+  setTimeout(()=>el.classList.remove(cls),900);
+}
+
 function playEffect(type,name,info={}){
   const layer=document.getElementById("fxLayer");
   if(!layer)return;
@@ -896,6 +869,11 @@ function playEffect(type,name,info={}){
     board.classList.add(info.damage?"impact-shake":info.heal?"heal-pulse":info.shield?"ward-pulse":"skill-pulse");
     setTimeout(()=>board.classList.remove("impact-shake","heal-pulse","ward-pulse","skill-pulse"),720);
   }
+
+  if(info.damage) targetImpact(".fighter.enemy", "damage", info.damage);
+  else if(info.heal) targetImpact(".fighter.player-fighter", "heal", info.heal);
+  else if(info.shield) targetImpact(".fighter.player-fighter", "shield", info.shield);
+  else if(type==="技能") targetImpact(".fighter.enemy", "skill", null);
 
   setTimeout(()=>{
     layer.classList.remove("active");
@@ -963,19 +941,35 @@ function battle(){
 }
 
 function fighter(c,enemy){
-  return `<div class="fighter ${enemy?"enemy":""}" style="--c1:${c.c1};--c2:${c.c2}">
+  const mana=enemy?S.enemyMana:S.mana;
+  const hpPct=Math.max(0,Math.min(100,c.curHp/c.hp*100));
+  const shield=c.shield||0;
+  const statusBits=[];
+  if(shield) statusBits.push(`<span class="status-pill shield-pill">護盾 ${shield}</span>`);
+  if(c.poison) statusBits.push(`<span class="status-pill poison-pill">中毒 ${c.poison}</span>`);
+  if(c.burn) statusBits.push(`<span class="status-pill burn-pill">灼熱</span>`);
+  if(c.skillBlocked) statusBits.push(`<span class="status-pill mute-pill">封技</span>`);
+  return `<div class="fighter ${enemy?"enemy":"player-fighter"}" data-fighter="${enemy?"enemy":"player"}" style="--c1:${c.c1};--c2:${c.c2}">
     <div class="fighter-art">${portraitHTML(c,"fighter-portrait")}</div>
+    <div class="fighter-vignette"></div>
     <div class="fighter-overlay">
+      <div class="fighter-topline">
+        <span class="side-label">${enemy?"OPPONENT":"YOUR HERO"}</span>
+        <span class="origin-badge">${esc(c.origin)}</span>
+      </div>
       <div class="fighter-head">
         <div>
           <b>${esc(c.name)}</b>
-          <div class="small">${esc(c.origin)} · ${esc(c.tag)}</div>
-          <div class="mana">⚡ ${enemy?S.enemyMana:S.mana}/6</div>
+          <div class="small">${esc(c.tag)} · ${esc(c.skill)}</div>
         </div>
         <span class="role-chip">${enemy?"敵方":"我方"}</span>
       </div>
-      <div class="hpbar"><div class="hpfill" style="width:${Math.max(0,c.curHp/c.hp*100)}%"></div></div>
-      <div class="status">HP ${Math.max(0,c.curHp)} / ${c.hp}　護盾 ${c.shield||0}</div>
+      <div class="hp-row"><span>HP</span><strong>${Math.max(0,c.curHp)}</strong><em>/ ${c.hp}</em></div>
+      <div class="hpbar"><div class="hpfill" style="width:${hpPct}%"></div></div>
+      <div class="fighter-footer">
+        <div class="status-pills">${statusBits.join("")||`<span class="status-pill">狀態正常</span>`}</div>
+        <div class="mana-pips" aria-label="神力 ${mana} / 6">${Array.from({length:6},(_,i)=>`<i class="${i<mana?"on":""}"></i>`).join("")}</div>
+      </div>
     </div>
   </div>`;
 }
