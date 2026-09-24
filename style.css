@@ -43,3 +43,99 @@ body{font-family:MythicLocal,"Noto Serif TC","Microsoft JhengHei",serif;backgrou
 .portrait-fallback span{font-size:88px!important;}
 .portrait-fallback small{display:block;color:#d9b76c;position:absolute;bottom:18px;left:0;right:0;text-align:center;letter-spacing:.2em;}
 @media(max-width:900px){.v7-battle .battle-top{grid-template-columns:1fr!important}.v7-battle .vs{display:none!important}.v7-battle .fighter{height:290px!important}.v7-battle .hand{overflow-x:auto;justify-content:flex-start;flex-wrap:nowrap}.v7-battle .card{min-width:175px!important;}}
+/* ===== V7 VISUAL FIX ===== */
+body,
+.screen,
+.home,
+.draw-screen,
+.battle-screen {
+  color: #f6f0df !important;
+}
+
+/* 首頁圖片不要再被黑幕壓死 */
+.v7-home-art {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(4,6,15,.18),
+      rgba(4,6,15,.02) 50%,
+      rgba(4,6,15,.20)
+    ),
+    url('assets/characters-collage.jpg') center/cover no-repeat !important;
+}
+
+/* 降低整體黑色遮罩 */
+.v7-shade {
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      transparent 0,
+      rgba(2,4,10,.04) 55%,
+      rgba(2,4,10,.25) 100%
+    ) !important;
+}
+
+/* 首頁內容 */
+.v7-home .home-content {
+  color: #f6f0df !important;
+  text-align: center;
+  margin: 0 auto;
+  background: radial-gradient(
+    ellipse,
+    rgba(7,9,20,.48),
+    transparent 72%
+  ) !important;
+}
+
+/* 標題 */
+.v7-home .brand h1 {
+  color: #fff5d7 !important;
+  text-shadow:
+    0 4px 24px #000,
+    0 0 38px #e7c36d88 !important;
+}
+
+/* 副標 */
+.v7-home .brand small {
+  color: #ead8a5 !important;
+  text-shadow: 0 2px 10px #000;
+}
+
+/* 說明文字 */
+.v7-home .subtitle {
+  color: #fff8e8 !important;
+  text-shadow:
+    0 2px 10px #000,
+    0 1px 3px #000 !important;
+}
+
+/* 三個功能標籤 */
+.v7-home .home-chips span {
+  color: #fff2c7 !important;
+  background: rgba(6,8,17,.72) !important;
+  border: 1px solid #d9b76c99 !important;
+  text-shadow: 0 1px 5px #000;
+}
+
+/* 開始遊戲按鈕 */
+.v7-home .cta-large {
+  color: #171108 !important;
+  background: linear-gradient(
+    145deg,
+    #8c6b2b,
+    #efd07a
+  ) !important;
+}
+
+/* 戰鬥卡牌文字 */
+.v7-battle .card {
+  color: #f6f0df !important;
+}
+
+.v7-battle .card h3 {
+  color: #f8dfa0 !important;
+}
+
+.v7-battle .card p {
+  color: #eee5d2 !important;
+}
