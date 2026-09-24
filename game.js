@@ -45,15 +45,19 @@ function drawEnemy(){if(S.enemyDeck.length){if(S.enemyHand.length<9)S.enemyHand.
 function fatigue(p){p.curHp-=2;log(`${p.name} 受到2點疲勞傷害。`)}
 function damage(target,n,source=""){let p=target;let shield=p.shield||0;let blocked=Math.min(shield,n);p.shield-=blocked;n-=blocked;
  if(n>0)p.curHp-=n; if(n>0&&p.curHp<=0&&p.decoy){p.curHp=1;p.decoy=false;log(`${p.name} 以替身避開致命一擊！`)}
- if(source){const total=n+blocked;log(`${source} 對 ${p.name} 造成 ${total} 點傷害${blocked?`（護盾抵消${blocked}）`:""}。`);setTimeout(()=>showFloat(`-${total}`,'damage',target===S.player?'player':'enemy'),20)}
- if(p.curHp<=0)endGame(target===S.player?S.enemy:S.player);
+ if(source)log(`${source} 對 ${p.name} 造成 ${n+blocked} 點傷害${blocked?`（護盾抵消${blocked}）`:""}。`);
+ if(p.curHp<=0) endGame(target===S.player?S.enemy:S.player);
 }
-function heal(p,n){let before=p.curHp;p.curHp=Math.min(p.hp,p.curHp+n);const gained=p.curHp-before;log(`${p.name} 恢復 ${gained} HP。`);setTimeout(()=>showFloat(`+${gained}`,'heal',p===S.player?'player':'enemy'),20)}
+function heal(p,n){let before=p.curHp;p.curHp=Math.min(p.hp,p.curHp+n);log(`${p.name} 恢復 ${p.curHp-before} HP。`)}
 function useCard(i){
  if(S.phase!=="player")return;
  const id=S.hand[i],c=card(id);if(!c||S.mana<c.cost)return;
+ const before={php:S.player.curHp,ehp:S.enemy.curHp,ps:S.player.shield||0,es:S.enemy.shield||0,mana:S.mana};
  S.hand.splice(i,1);S.mana-=c.cost;S.usedThisTurn=true;S.lastPlayerCard=c.id;S.discard.push(c.id);log(`你使用【${c.name}】。`);
- resolve(c,S.player,S.enemy,true);render();playEffect(c.type,c.name);if(S.enemy.curHp<=0)return;
+ resolve(c,S.player,S.enemy,true);render();
+ const effect=visualResult(c,before);
+ playEffect(c.type,c.name,effect);
+ if(S.enemy.curHp<=0)return;
 }
 function resolve(c,me,op,isPlayer){
  const atk=(n)=>damage(op,n,me.name);
@@ -75,6 +79,7 @@ function resolve(c,me,op,isPlayer){
 }
 function useSkill(){
  if(S.phase!=="player"||S.mana<S.player.skillCost||S.skillCooldown>0||S.player.skillBlocked)return;
+ const before={php:S.player.curHp,ehp:S.enemy.curHp,ps:S.player.shield||0,es:S.enemy.shield||0,mana:S.mana};
  S.mana-=S.player.skillCost;S.skillCooldown=2;S.playerUsedSkill=true;S.player.usedSkill=true;
  const id=S.player.id;
  if(id==="nuwa"||id==="amaterasu"||id==="cernunnos"){heal(S.player,id==="nuwa"?5:id==="amaterasu"?4:4);if(id==="cernunnos")damage(S.enemy,4,S.player.name)}
@@ -106,7 +111,7 @@ function useSkill(){
  else if(id==="ra"){damage(S.enemy,6,S.player.name);S.enemy.burn=2}
  else if(id==="osiris"){let pick=S.discard.find(x=>card(x).cost<=2);if(pick)S.hand.push(pick)}
  if(S.player.id==="thor"||S.player.id==="heracles"||S.player.id==="shiva")S.player.stacks=Math.min(3,(S.player.stacks||0)+1);
- render();playEffect("技能",S.player.skill);
+ render();playEffect("技能",S.player.skill,visualResult({type:"技能",name:S.player.skill},before));
 }
 function endTurn(){
  if(S.phase!=="player")return;
@@ -162,18 +167,40 @@ function endGame(winner){
  S.phase="over";let win=winner===S.player;
  setTimeout(()=>{app.innerHTML=`<div class="modal"><div class="modal-box"><div class="brand" style="font-size:34px">${win?"勝利":"敗北"}</div><p>${win?`你以 ${S.player.curHp} HP 擊敗了 ${S.enemy.name}。`:`${S.enemy.name} 擊敗了你。`}</p><button class="cta" onclick="S.screen='select';render()">再戰一場</button></div></div>`},80);
 }
-function playEffect(type,name){const layer=document.getElementById('fxLayer');if(!layer)return;const cls=({攻擊:'slash',防禦:'ward',恢復:'heal',詛咒:'curse',控制:'curse',神力:'mana',技能:'ultimate',傳說:'ultimate'})[type]||'ultimate';const icon=cls==='heal'?'✚':cls==='ward'?'⬡':cls==='curse'?'☾':cls==='mana'?'✦':'⚔';layer.innerHTML=`<div class="fx-burst ${cls}"><span>${icon}</span><b>${esc(name)}</b></div>`;layer.classList.add('active');document.querySelector('.board')?.classList.add('shake');setTimeout(()=>document.querySelector('.board')?.classList.remove('shake'),380);setTimeout(()=>{if(layer){layer.classList.remove('active');layer.innerHTML=''}},900)}
-function showFloat(text,kind='damage',side='enemy'){const board=document.querySelector('.board');if(!board)return;const el=document.createElement('div');el.className=`damage-float ${kind==='heal'?'heal-float':''}`;el.textContent=text;el.style.left=side==='player'?'25%':'75%';el.style.top=side==='player'?'36%':'30%';board.appendChild(el);setTimeout(()=>el.remove(),900)}
+function visualResult(c,before){
+ const hpLoss=Math.max(0,before.ehp-S.enemy.curHp);
+ const hpGain=Math.max(0,S.player.curHp-before.php);
+ const shieldGain=Math.max(0,(S.player.shield||0)-before.ps);
+ const enemyShieldLoss=Math.max(0,before.es-(S.enemy.shield||0));
+ return {damage:hpLoss,heal:hpGain,shield:shieldGain,enemyShieldLoss,kind:c.type};
+}
+function playEffect(type,name,info={}){
+ const layer=document.getElementById('fxLayer');if(!layer)return;
+ const cls=({攻擊:'slash',防禦:'ward',恢復:'heal',詛咒:'curse',控制:'curse',神力:'mana',技能:'ultimate',傳說:'ultimate'})[type]||'spark';
+ const icon={slash:'⚔',ward:'🛡',heal:'✚',curse:'☠',mana:'⚡',ultimate:'✦',spark:'✧'}[cls]||'✦';
+ let value='';
+ if(info.damage)value=`<strong class="fx-number damage">-${info.damage}</strong>`;
+ else if(info.heal)value=`<strong class="fx-number heal-num">+${info.heal}</strong>`;
+ else if(info.shield)value=`<strong class="fx-number shield-num">+${info.shield} 護盾</strong>`;
+ const label=info.damage?'命中':info.heal?'恢復':info.shield?'防禦展開':name;
+ layer.innerHTML=`<div class="fx-burst ${cls}"><span>${icon}</span>${value}<b>${esc(label)}</b><em>${esc(name)}</em></div>`;
+ layer.classList.add('active');
+ const board=document.querySelector('.board');
+ if(board){board.classList.remove('impact-shake','heal-pulse','ward-pulse');void board.offsetWidth;board.classList.add(info.damage?'impact-shake':info.heal?'heal-pulse':info.shield?'ward-pulse':'impact-shake');setTimeout(()=>board.classList.remove('impact-shake','heal-pulse','ward-pulse'),620)}
+ const fighter=document.querySelector(info.damage?'.fighter.enemy':'.fighter:not(.enemy)');
+ if(fighter){fighter.classList.add(info.damage?'hit-flash':info.shield?'shield-glow':info.heal?'heal-glow':'skill-glow');setTimeout(()=>fighter.classList.remove('hit-flash','shield-glow','heal-glow','skill-glow'),700)}
+ setTimeout(()=>{if(layer){layer.classList.remove('active');layer.innerHTML=''}},1100);
+}
 function battle(){
  const p=S.player,e=S.enemy;
- const logs=S.log.slice(0,3).map(x=>'<div>› '+esc(x)+'</div>').join('');
- app.innerHTML='<main class="battle"><div class="toolbar"><div><div class="brand" style="text-align:left;font-size:25px">神話爭鋒 <small style="text-align:left">MYTHIC CLASH</small></div><div class="small">第 '+S.turn+' 回合 · '+(S.phase==='player'?'你的回合':'對手回合')+'</div></div><button class="ghost" onclick="S.screen=\'select\';render()">退出戰鬥</button></div>'+
- '<div class="battle-top">'+fighter(e,true)+'<div class="vs">VS</div>'+fighter(p,false)+'</div>'+
- '<section class="board"><div class="arena-floor"></div><div id="fxLayer" class="fx-layer" aria-live="polite"></div><div class="log">'+logs+'</div>'+ 
- '<div class="center-actions"><span class="mana">⚡ 神力 '+S.mana+'/6</span><button class="endturn" onclick="endTurn()" '+(S.phase!=='player'?'disabled':'')+'>結束回合</button></div>'+skillUI(p)+
- '<div class="hand">'+S.hand.map((id,i)=>cardUI(card(id),i)).join('')+'</div></section></main>';
+ app.innerHTML=`<main class="battle"><div class="toolbar"><div><div class="brand" style="text-align:left;font-size:24px">神話爭鋒</div><div class="small">第 ${S.turn} 回合 · ${S.phase==="player"?"你的回合":"對手回合"}</div></div><button class="ghost" onclick="S.screen='select';render()">退出戰鬥</button></div>
+ <div class="battle-top">${fighter(e,true)}<div class="vs">VS</div>${fighter(p,false)}</div>
+ <section class="board"><div id="fxLayer" class="fx-layer" aria-live="polite"></div><div class="log">${S.log.map(x=>`<div>› ${esc(x)}</div>`).join("")}</div>
+ <div class="center-actions"><span class="mana">⚡ 神力 ${S.mana}/6</span><button class="endturn" onclick="endTurn()" ${S.phase!=="player"?"disabled":""}>結束回合</button></div>
+ ${skillUI(p)}
+ <div class="hand">${S.hand.map((id,i)=>cardUI(card(id),i)).join("")}</div></section></main>`
 }
-function fighter(c,enemy){const hp=Math.max(0,c.curHp),pct=Math.max(0,Math.min(100,hp/c.hp*100));return '<div class="fighter '+(enemy?'enemy':'')+'" style="--c1:'+c.c1+';--c2:'+c.c2+'"><div class="fighter-head"><div class="avatar"><div class="avatar-glow">'+c.emoji+'</div></div><div><div class="fighter-name">'+c.name+'</div><div class="fighter-title">'+c.origin+' · '+c.tag+'</div><div class="mana">⚡ '+(enemy?S.enemyMana:S.mana)+'/6</div></div></div><div class="hpbar"><div class="hpfill" style="width:'+pct+'%"></div></div><div class="status">HP '+hp+' / '+c.hp+'　護盾 '+(c.shield||0)+'</div></div>'}
-function skillUI(p){return '<div class="skill"><b>✦ '+p.skill+'</b><span class="small">　'+p.desc+'</span><button onclick="useSkill()" '+(S.phase!=='player'||S.mana<p.skillCost||S.skillCooldown>0||p.skillBlocked?'disabled':'')+'>消耗 '+p.skillCost+' ⚡ '+(S.skillCooldown?'CD '+S.skillCooldown:'發動')+'</button></div>'}
-function cardUI(c,i){const icon=({攻擊:'⚔',防禦:'⬡',恢復:'✚',控制:'☾',手牌:'✦',詛咒:'☠',神力:'⚡',特殊:'✧',傳說:'♛'})[c.type]||'✦';return '<article class="card '+(S.phase!=='player'||S.mana<c.cost?'disabled':'')+'" onclick="useCard('+i+')"><span class="rarity">'+c.rarity+'</span><span class="cost">'+c.cost+'</span><div class="type">'+c.type+'</div><div class="card-illustration '+c.type+'"><span>'+icon+'</span></div><h3>'+c.name+'</h3><p>'+c.desc+'</p></article>'}
+function fighter(c,enemy){return `<div class="fighter ${enemy?"enemy":""}" style="--c1:${c.c1};--c2:${c.c2}"><div class="fighter-head"><div class="avatar"><div class="avatar-glow">${c.emoji}</div></div><div><b>${c.name}</b><div class="small">${c.origin} · ${c.tag}</div><div class="mana">⚡ ${enemy?S.enemyMana:S.mana}/6</div></div></div><div class="hpbar"><div class="hpfill" style="width:${Math.max(0,c.curHp/c.hp*100)}%"></div></div><div class="status">HP ${Math.max(0,c.curHp)} / ${c.hp}　護盾 ${c.shield||0}</div></div>`}
+function skillUI(p){return `<div class="skill"><b>✦ ${p.skill}</b><span class="small">　${p.desc}</span><button onclick="useSkill()" ${S.phase!=="player"||S.mana<p.skillCost||S.skillCooldown>0||p.skillBlocked?"disabled":""}>消耗 ${p.skillCost} ⚡ ${S.skillCooldown?`CD ${S.skillCooldown}`:"發動"}</button></div>`}
+function cardUI(c,i){return `<article class="card ${S.phase!=="player"||S.mana<c.cost?"disabled":""}" onclick="useCard(${i})"><span class="rarity">${c.rarity}</span><span class="cost">${c.cost}</span><div class="type">${c.type}</div><div class="card-illustration ${c.type}"><span>${({攻擊:"⚔",防禦:"⬡",恢復:"✚",控制:"☾",手牌:"✦",詛咒:"☠",神力:"⚡",特殊:"✧",傳說:"♛"})[c.type]||"✦"}</span><div class="card-shine"></div></div><h3>${c.name}</h3><p>${c.desc}</p></article>`}
 render();
