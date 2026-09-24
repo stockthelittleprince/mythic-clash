@@ -55,8 +55,9 @@ function useCard(i){
  const before={php:S.player.curHp,ehp:S.enemy.curHp,ps:S.player.shield||0,es:S.enemy.shield||0,mana:S.mana};
  S.hand.splice(i,1);S.mana-=c.cost;S.usedThisTurn=true;S.lastPlayerCard=c.id;S.discard.push(c.id);log(`你使用【${c.name}】。`);
  resolve(c,S.player,S.enemy,true);render();
+ showCast(c);
  const effect=visualResult(c,before);
- playEffect(c.type,c.name,effect);
+ setTimeout(()=>playEffect(c.type,c.name,effect),180);
  if(S.enemy.curHp<=0)return;
 }
 function resolve(c,me,op,isPlayer){
@@ -167,6 +168,14 @@ function endGame(winner){
  S.phase="over";let win=winner===S.player;
  setTimeout(()=>{app.innerHTML=`<div class="modal"><div class="modal-box"><div class="brand" style="font-size:34px">${win?"勝利":"敗北"}</div><p>${win?`你以 ${S.player.curHp} HP 擊敗了 ${S.enemy.name}。`:`${S.enemy.name} 擊敗了你。`}</p><button class="cta" onclick="S.screen='select';render()">再戰一場</button></div></div>`},80);
 }
+function showCast(c){
+ const layer=document.getElementById('fxLayer');if(!layer)return;
+ const icon=({攻擊:'⚔',防禦:'🛡',恢復:'✚',控制:'☾',手牌:'✦',詛咒:'☠',神力:'⚡',特殊:'✧',傳說:'♛'})[c.type]||'✦';
+ layer.innerHTML=`<div class="cast-card"><span>${icon}</span><b>${esc(c.name)}</b><small>施放</small></div>`;
+ layer.classList.add('active','cast-mode');
+ setTimeout(()=>layer.classList.remove('cast-mode'),420);
+ setTimeout(()=>{layer.classList.remove('active');layer.innerHTML=''},520);
+}
 function visualResult(c,before){
  const hpLoss=Math.max(0,before.ehp-S.enemy.curHp);
  const hpGain=Math.max(0,S.player.curHp-before.php);
@@ -181,20 +190,29 @@ function playEffect(type,name,info={}){
  let value='';
  if(info.damage)value=`<strong class="fx-number damage">-${info.damage}</strong>`;
  else if(info.heal)value=`<strong class="fx-number heal-num">+${info.heal}</strong>`;
- else if(info.shield)value=`<strong class="fx-number shield-num">+${info.shield} 護盾</strong>`;
- const label=info.damage?'命中':info.heal?'恢復':info.shield?'防禦展開':name;
- layer.innerHTML=`<div class="fx-burst ${cls}"><span>${icon}</span>${value}<b>${esc(label)}</b><em>${esc(name)}</em></div>`;
+ else if(info.shield)value=`<strong class="fx-number shield-num">+${info.shield}</strong>`;
+ const label=info.damage?'命中':info.heal?'恢復':info.shield?'護盾展開':name;
+ const target=info.damage?'enemy':(info.heal||info.shield?'player':'center');
+ layer.innerHTML=`<div class="fx-burst ${cls} target-${target}"><div class="fx-ring"></div><span>${icon}</span>${value}<b>${esc(label)}</b><em>${esc(name)}</em></div>`;
  layer.classList.add('active');
  const board=document.querySelector('.board');
- if(board){board.classList.remove('impact-shake','heal-pulse','ward-pulse');void board.offsetWidth;board.classList.add(info.damage?'impact-shake':info.heal?'heal-pulse':info.shield?'ward-pulse':'impact-shake');setTimeout(()=>board.classList.remove('impact-shake','heal-pulse','ward-pulse'),620)}
- const fighter=document.querySelector(info.damage?'.fighter.enemy':'.fighter:not(.enemy)');
- if(fighter){fighter.classList.add(info.damage?'hit-flash':info.shield?'shield-glow':info.heal?'heal-glow':'skill-glow');setTimeout(()=>fighter.classList.remove('hit-flash','shield-glow','heal-glow','skill-glow'),700)}
- setTimeout(()=>{if(layer){layer.classList.remove('active');layer.innerHTML=''}},1100);
+ if(board){
+   board.classList.remove('impact-shake','heal-pulse','ward-pulse','skill-pulse');
+   void board.offsetWidth;
+   board.classList.add(info.damage?'impact-shake':info.heal?'heal-pulse':info.shield?'ward-pulse':'skill-pulse');
+   setTimeout(()=>board.classList.remove('impact-shake','heal-pulse','ward-pulse','skill-pulse'),720)
+ }
+ const fighter=document.querySelector(target==='enemy'?'.fighter.enemy':target==='player'?'.fighter:not(.enemy)':null);
+ if(fighter){
+   fighter.classList.add(info.damage?'hit-flash':info.shield?'shield-glow':info.heal?'heal-glow':'skill-glow');
+   setTimeout(()=>fighter.classList.remove('hit-flash','shield-glow','heal-glow','skill-glow'),800)
+ }
+ setTimeout(()=>{if(layer){layer.classList.remove('active');layer.innerHTML=''}},1250);
 }
 function battle(){
  const p=S.player,e=S.enemy;
  app.innerHTML=`<main class="battle"><div class="toolbar"><div><div class="brand" style="text-align:left;font-size:24px">神話爭鋒</div><div class="small">第 ${S.turn} 回合 · ${S.phase==="player"?"你的回合":"對手回合"}</div></div><button class="ghost" onclick="S.screen='select';render()">退出戰鬥</button></div>
- <div class="battle-top">${fighter(e,true)}<div class="vs">VS</div>${fighter(p,false)}</div>
+ <div class="battle-top">${fighter(p,false)}<div class="vs">VS</div>${fighter(e,true)}</div>
  <section class="board"><div id="fxLayer" class="fx-layer" aria-live="polite"></div><div class="log">${S.log.map(x=>`<div>› ${esc(x)}</div>`).join("")}</div>
  <div class="center-actions"><span class="mana">⚡ 神力 ${S.mana}/6</span><button class="endturn" onclick="endTurn()" ${S.phase!=="player"?"disabled":""}>結束回合</button></div>
  ${skillUI(p)}

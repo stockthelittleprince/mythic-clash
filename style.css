@@ -131,3 +131,54 @@ button{font:inherit;color:inherit}
 .card-illustration{overflow:hidden}
 .card-shine{position:absolute;inset:-40%;background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.25) 48%,transparent 60%);transform:translateX(-55%) rotate(12deg);animation:cardShine 4s ease-in-out infinite;pointer-events:none}
 @keyframes cardShine{0%,65%{transform:translateX(-60%) rotate(12deg)}85%,100%{transform:translateX(60%) rotate(12deg)}}
+
+/* V5 visual combat pass */
+.battle{max-width:1500px}
+.battle-top{grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr);align-items:stretch}
+.fighter{position:relative;min-height:142px;overflow:hidden;background:linear-gradient(135deg,rgba(12,16,31,.98),rgba(27,32,57,.96));box-shadow:inset 0 0 45px rgba(110,130,210,.08),0 16px 40px #0007}
+.fighter:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 82% 35%,var(--c2),transparent 30%);opacity:.14;pointer-events:none}
+.fighter.enemy:before{background:radial-gradient(circle at 18% 35%,var(--c2),transparent 30%)}
+.avatar{position:relative;z-index:1;width:82px;height:82px;font-size:44px;box-shadow:inset 0 0 25px #0008,0 0 22px rgba(217,183,108,.2)}
+.fighter-head>div:last-child{position:relative;z-index:1}
+.fighter .hpbar{position:relative;z-index:1;height:11px}
+.fighter .status{position:relative;z-index:1}
+.vs{display:grid;place-items:center;font-size:30px;text-shadow:0 0 22px rgba(217,183,108,.45)}
+.fx-layer{z-index:15}
+.fx-burst{position:relative;min-width:190px;padding:16px 22px;border-radius:22px;border:1px solid rgba(255,255,255,.22);background:rgba(9,12,25,.86);backdrop-filter:blur(8px);box-shadow:0 20px 70px #0009}
+.fx-burst.target-enemy{transform:translate(32%,0)}
+.fx-burst.target-player{transform:translate(-32%,0)}
+.fx-burst .fx-ring{position:absolute;inset:-24px;border-radius:50%;border:2px solid currentColor;opacity:.35;animation:ringExpand .9s both;pointer-events:none}
+.fx-burst span{font-size:72px}
+.fx-burst b{font-size:24px;display:block}
+.fx-burst em{font-size:12px;color:#b9bfd2;font-style:normal}
+.fx-number{display:block;font-family:Rajdhani;font-size:48px;line-height:1}
+.fx-number.damage{color:#ff6f7a;text-shadow:0 0 20px #ff4755}
+.fx-number.heal-num{color:#7cf0a8;text-shadow:0 0 20px #43e789}
+.fx-number.shield-num{color:#74cfff;text-shadow:0 0 20px #43bfff}
+.cast-card{width:190px;padding:22px;border:1px solid var(--gold);border-radius:18px;background:linear-gradient(145deg,#2a2947,#0d1020);box-shadow:0 0 45px rgba(217,183,108,.35);display:flex;flex-direction:column;align-items:center;gap:5px;animation:castIn .45s both}
+.cast-card span{font-size:58px;color:#f6dfa0;text-shadow:0 0 24px currentColor}
+.cast-card b{font-size:21px;color:#f4dfa2}
+.cast-card small{color:#9fa6bf;letter-spacing:.2em}
+@keyframes castIn{0%{transform:translateY(70px) scale(.65);opacity:0}60%{transform:translateY(-8px) scale(1.06);opacity:1}100%{transform:translateY(0) scale(1);opacity:1}}
+@keyframes ringExpand{0%{transform:scale(.45);opacity:.8}100%{transform:scale(1.35);opacity:0}}
+.hit-flash{animation:hitFlash .72s both}
+.shield-glow{animation:shieldGlow .8s both}
+.heal-glow{animation:healGlow .8s both}
+.skill-glow{animation:skillGlow .8s both}
+@keyframes hitFlash{0%,100%{filter:none}25%{filter:brightness(2) saturate(1.4);transform:translateX(-5px)}45%{transform:translateX(5px)}65%{transform:translateX(-3px)}}
+@keyframes shieldGlow{0%{box-shadow:inset 0 0 45px rgba(110,130,210,.08),0 0 0 transparent}50%{box-shadow:inset 0 0 70px rgba(70,190,255,.22),0 0 35px rgba(70,190,255,.45)}100%{box-shadow:inset 0 0 45px rgba(110,130,210,.08),0 0 0 transparent}}
+@keyframes healGlow{50%{box-shadow:inset 0 0 70px rgba(80,230,150,.2),0 0 30px rgba(80,230,150,.35)}}
+@keyframes skillGlow{50%{box-shadow:inset 0 0 80px rgba(190,130,255,.22),0 0 40px rgba(190,130,255,.45)}}
+.impact-shake{animation:boardShake .55s both}
+.heal-pulse{animation:boardPulseGreen .65s both}
+.ward-pulse{animation:boardPulseBlue .65s both}
+.skill-pulse{animation:boardPulseGold .7s both}
+@keyframes boardShake{0%,100%{transform:translate(0)}20%{transform:translate(-5px,1px)}40%{transform:translate(5px,-1px)}60%{transform:translate(-3px)}80%{transform:translate(2px)}}
+@keyframes boardPulseGreen{50%{box-shadow:0 0 55px rgba(80,230,150,.22)}}
+@keyframes boardPulseBlue{50%{box-shadow:0 0 55px rgba(70,190,255,.24)}}
+@keyframes boardPulseGold{50%{box-shadow:0 0 65px rgba(217,183,108,.25)}}
+@media(max-width:850px){
+ .battle-top{grid-template-columns:1fr}.vs{display:none}
+ .fx-burst.target-enemy,.fx-burst.target-player{transform:none}
+ .avatar{width:70px;height:70px}
+}
