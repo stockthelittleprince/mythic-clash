@@ -1,0 +1,176 @@
+
+/* =========================================================
+   FINAL CARD-BATTLE HAND LAYOUT
+   ========================================================= */
+
+/* 戰鬥區域重新分配：角色在上、操作與手牌在下 */
+.v7-battle{
+  min-height:100vh !important;
+  padding-bottom:24px !important;
+}
+
+.v7-battle .board{
+  width:min(1180px,100%) !important;
+  margin:0 auto !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+/* 手牌：橫向、置中、貼近畫面底部 */
+.v7-battle .hand{
+  width:100% !important;
+  min-height:270px !important;
+  display:flex !important;
+  flex-direction:row !important;
+  flex-wrap:nowrap !important;
+  justify-content:center !important;
+  align-items:flex-end !important;
+  gap:0 !important;
+  overflow-x:auto !important;
+  overflow-y:visible !important;
+  padding:28px 24px 8px !important;
+}
+
+/* 每張牌像真正卡牌遊戲的手牌 */
+.v7-battle .hand .card{
+  flex:0 0 175px !important;
+  width:175px !important;
+  min-width:175px !important;
+  height:255px !important;
+  min-height:255px !important;
+  margin-left:-18px !important;
+  transform-origin:center bottom !important;
+  transition:
+    transform .18s ease,
+    margin .18s ease,
+    box-shadow .18s ease,
+    z-index .18s ease !important;
+}
+
+/* 第一張不要負 margin */
+.v7-battle .hand .card:first-child{
+  margin-left:0 !important;
+}
+
+/* 滑過去時往上浮、稍微放大 */
+.v7-battle .hand .card:hover:not(.disabled){
+  transform:translateY(-28px) scale(1.06) !important;
+  margin-left:0 !important;
+  margin-right:18px !important;
+  z-index:20 !important;
+}
+
+/* 卡牌圖片比例 */
+.v7-battle .hand .card-illustration{
+  height:118px !important;
+  margin:7px 0 9px !important;
+}
+
+/* 卡牌文字縮小，讓整張牌更像實體卡 */
+.v7-battle .hand .card h3{
+  font-size:16px !important;
+  margin:5px 0 !important;
+}
+
+.v7-battle .hand .card p{
+  font-size:11px !important;
+  line-height:1.45 !important;
+}
+
+/* 神力與結束回合區 */
+.v7-battle .center-actions{
+  order:2 !important;
+  flex:0 0 auto !important;
+}
+
+/* 技能區放在手牌上面 */
+.v7-battle .skill{
+  order:1 !important;
+  flex:0 0 auto !important;
+}
+
+/* log 最上面 */
+.v7-battle .log{
+  order:0 !important;
+}
+
+/* 手牌放最下面 */
+.v7-battle .hand{
+  order:3 !important;
+}
+
+/* 電腦版讓手牌更接近一般卡牌遊戲的「手牌扇形」 */
+@media(min-width:901px){
+  .v7-battle .hand .card:nth-child(1){transform:rotate(-6deg) translateY(8px);}
+  .v7-battle .hand .card:nth-child(2){transform:rotate(-4deg) translateY(4px);}
+  .v7-battle .hand .card:nth-child(3){transform:rotate(-2deg);}
+  .v7-battle .hand .card:nth-child(4){transform:rotate(0deg);}
+  .v7-battle .hand .card:nth-child(5){transform:rotate(2deg);}
+  .v7-battle .hand .card:nth-child(6){transform:rotate(4deg) translateY(4px);}
+  .v7-battle .hand .card:nth-child(7){transform:rotate(6deg) translateY(8px);}
+}
+
+/* 手機：維持橫向滑動，不再變成直排 */
+@media(max-width:900px){
+  .v7-battle .hand{
+    justify-content:flex-start !important;
+    min-height:250px !important;
+    padding:24px 18px 8px !important;
+  }
+
+  .v7-battle .hand .card{
+    flex:0 0 165px !important;
+    width:165px !important;
+    min-width:165px !important;
+    height:240px !important;
+    min-height:240px !important;
+    margin-left:-12px !important;
+  }
+
+  .v7-battle .hand .card:first-child{
+    margin-left:0 !important;
+  }
+}
+
+/* 抽卡頁：確保命運卡真正位於畫面中央 */
+.v7-draw .draw-content{
+  min-height:100vh !important;
+  width:100% !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+.v7-draw .fate-stage{
+  width:min(440px,92vw) !important;
+  min-height:440px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+.v7-draw .fate-card{
+  width:100% !important;
+  min-height:390px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+/* 未翻牌時的命運符號 */
+.v7-draw .fate-card:not(.revealed){
+  background:
+    radial-gradient(circle,#30274d 0,#12172a 48%,#080b15 100%) !important;
+}
+
+.v7-draw .fate-card:not(.revealed) .fate-sigil{
+  display:block !important;
+}
+
+/* 抽卡按鈕 */
+.v7-draw #drawButton{
+  position:relative !important;
+  z-index:20 !important;
+  margin-top:6px !important;
+}

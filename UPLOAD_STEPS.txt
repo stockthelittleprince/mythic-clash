@@ -1,0 +1,33 @@
+神話爭鋒｜GitHub 一次更新步驟
+
+1. 下載 mythic-clash-complete-upload.zip
+2. 解壓縮。
+3. 打開解壓縮後的資料夾。
+4. 你應該直接看到：assets、index.html、data.js、game.js、style.css 等。
+   注意：不要把「mythic-clash-complete」這個外層資料夾再整個塞進 GitHub。
+5. 打開 GitHub → stockthelittleprince/mythic-clash → main。
+6. 點 Add file → Upload files。
+7. 把解壓縮資料夾裡面的「assets 資料夾 + index.html + data.js + game.js + style.css + 其他檔案」一次拖進上傳區。
+8. 若 GitHub 問是否覆蓋同名檔案，全部選擇覆蓋/保留新版。
+9. 往下到 Commit changes。
+10. Commit message 可寫：Complete visual gameplay rebuild
+11. 按 Commit changes。
+12. 等 GitHub Pages 更新約 1～3 分鐘，再重新整理網站。
+
+這一包已經包含：
+- 30 位角色立繪
+- 50 張功能卡卡面
+- 多組戰鬥背景
+- 真正的牌庫／手牌／棄牌／抽牌循環
+- 開局 5 張牌、每回合抽 1 張
+- 神力消耗
+- 卡牌效果
+- 技能效果
+- 傷害／治療／護盾動畫
+- 抽牌提示
+- 卡牌施放動畫
+- 戰鬥震動與特效
+- 橫向扇形手牌
+- 動態戰鬥背景
+
+請維持 assets 資料夾結構，不要把裡面的圖片全部散落到根目錄。

@@ -1,13 +1,18 @@
-# 神話爭鋒 V2 視覺測試版
+# Mythic Clash — Complete GitHub Pages Pack
 
-本版新增：隨機抽取30角色、一次重抽、翻牌動畫、卡牌插畫風格佔位圖、戰鬥類型特效、角色光暈。
+This package contains the complete frontend build for the Mythic Clash prototype.
 
-注意：目前插畫是 CSS 視覺佔位，不是30張正式立繪。部分進階功能牌和被動仍待實作及平衡測試。此版供介面及互動測試，尚非正式完成版。
+## Included
+- 30 character portrait assets
+- 50 card-art assets
+- 10 arena background variants
+- full `index.html`, `data.js`, `game.js`, `style.css`
+- real deck/hand/discard mechanics
+- initial 5-card draw and 1-card-per-turn draw
+- reshuffle and fatigue
+- card/skill combat effects, HP/shield changes, damage numbers, screen shake
+- dynamic battle backgrounds
+- horizontal/fanned hand layout
 
-部署：解壓縮，將內部 `index.html`、`style.css`、`data.js`、`game.js`、`README.md` 與 `assets` 資料夾上傳到 GitHub repository 根目錄，覆蓋同名檔案，Commit changes，等待 Pages 自動更新。
-
-
-## V4 視覺效果
-- 出牌後顯示類型化戰鬥特效、傷害/治療/護盾數字。
-- 受擊、治療、護盾與技能會有角色高亮與戰場動態。
-- 卡牌 hover、按下與卡面光澤動畫。
+## GitHub Pages install
+Upload the **contents of this folder** into the root of the `mythic-clash` repository, replacing the existing files when prompted. Keep the `assets/` folder structure exactly as provided.

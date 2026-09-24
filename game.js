@@ -11,20 +11,27 @@ const app = document.getElementById("app");
    ========================================================= */
 
 const ART = {
-  nezha:"assets/characters/nezha.jpg", wukong:"assets/characters/wukong.jpg",
-  chang_e:"assets/characters/chang_e.jpg", erlang:"assets/characters/erlang.jpg",
-  amaterasu:"assets/characters/amaterasu.jpg", susanoo:"assets/characters/susanoo.jpg",
-  zeus:"assets/characters/zeus.jpg", athena:"assets/characters/athena.jpg"
+  nezha:"assets/characters/nezha.webp", wukong:"assets/characters/wukong.webp",
+  erlang:"assets/characters/erlang.webp", nuwa:"assets/characters/nuwa.webp",
+  chang_e:"assets/characters/chang_e.webp", houyi:"assets/characters/houyi.webp",
+  jingwei:"assets/characters/jingwei.webp", zhongkui:"assets/characters/zhongkui.webp",
+  amaterasu:"assets/characters/amaterasu.webp", susanoo:"assets/characters/susanoo.webp",
+  tsukuyomi:"assets/characters/tsukuyomi.webp", izanagi:"assets/characters/izanagi.webp",
+  hanuman:"assets/characters/hanuman.webp", shiva:"assets/characters/shiva.webp",
+  garuda:"assets/characters/garuda.webp", zeus:"assets/characters/zeus.webp",
+  athena:"assets/characters/athena.webp", hades:"assets/characters/hades.webp",
+  medusa:"assets/characters/medusa.webp", heracles:"assets/characters/heracles.webp",
+  loki:"assets/characters/loki.webp", thor:"assets/characters/thor.webp",
+  odin:"assets/characters/odin.webp", freya:"assets/characters/freya.webp",
+  anubis:"assets/characters/anubis.webp", ra:"assets/characters/ra.webp",
+  osiris:"assets/characters/osiris.webp", morrigan:"assets/characters/morrigan.webp",
+  gilgamesh:"assets/characters/gilgamesh.webp", cernunnos:"assets/characters/cernunnos.webp"
 };
 
-const CARD_ART = {
-  shield:"assets/cards/shield.jpg", strike:"assets/cards/sunburst.jpg",
-  fire:"assets/cards/sunburst.jpg", light:"assets/cards/shield.jpg",
-  spring:"assets/cards/heal.jpg", gift:"assets/cards/heal.jpg",
-  poison:"assets/cards/curse.jpg", curse:"assets/cards/curse.jpg",
-  thunder:"assets/cards/thunder.jpg", crush:"assets/cards/slash.jpg",
-  pierce:"assets/cards/slash.jpg"
-};
+const CARD_ART = Object.fromEntries(
+  ["strike","fire","pierce","double","crush","soul","thunder","backstab","shield","light","mirror","dodge","lastwall","spring","gift","rebirth","moonbless","seal","silence","chaos","timestop","rewind","steal","peek","swap","sacrifice","dice","curse","poison","burn","soulbind","weaken","infuse","pact","wrath","decoy","rollback","stealfate","mirrorcard","forbidden","ragnarok","rewrite","judgment","chaosfall","counterstrike","deathrefuse","allone","coin","domain","endbell"]
+  .map(id=>[id,`assets/cards/${id}.webp`])
+);
 
 const TYPE_ICON = {
   攻擊:"⚔", 防禦:"◈", 恢復:"✚", 控制:"◐", 手牌:"✦",
@@ -202,10 +209,10 @@ function rerollFate(){
 
 function startGame(id){
   const pc=getChar(id);
-  S.player={...pc,curHp:pc.hp,shield:0,usedSkill:false,stacks:0,trial:0};
+  S.player={...pc,curHp:pc.hp,shield:0,usedSkill:false,stacks:0,trial:0,forbiddenNext:false};
   const choices=shuffle(CHARACTERS.filter(c=>c.id!==id));
   const ec=choices[0];
-  S.enemy={...ec,curHp:ec.hp,shield:0,usedSkill:false,stacks:0,trial:0};
+  S.enemy={...ec,curHp:ec.hp,shield:0,usedSkill:false,stacks:0,trial:0,forbiddenNext:false};
 
   S.deck=starterDeck();
   S.enemyDeck=starterDeck();
@@ -398,7 +405,7 @@ function removeNegative(p){
 function canUseCard(c){
   if(S.phase!=="player")return false;
   if(S.limit<=0)return false;
-  if(S.mana<c.cost && !S.forbiddenNext)return false;
+  if(S.mana<c.cost && !S.player.forbiddenNext)return false;
   if(S.player.attackLocked && c.type==="攻擊")return false;
   if(c.id==="counterstrike" && S.player.curHp>=S.enemy.curHp)return false;
   return true;
@@ -415,14 +422,16 @@ function useCard(i){
     ps:S.player.shield||0, es:S.enemy.shield||0,
     mana:S.mana
   };
+  const previousCard=S.lastPlayerCard;
 
   S.hand.splice(i,1);
-  const free=S.forbiddenNext;
-  if(free)S.forbiddenNext=false;
+  const free=S.player.forbiddenNext;
+  if(free)S.player.forbiddenNext=false;
   else S.mana-=c.cost;
 
   S.usedThisTurn=true;
   S.lastPlayerCard=c.id;
+  S.player.previousCard=previousCard;
   S.discard.push(c.id);
   S.limit--;
 
@@ -454,7 +463,7 @@ function resolve(c,me,op,isPlayer){
     else if(c.id==="crush"){atk(6);damage(me,1,me.name+" 反噬");}
     else if(c.id==="soul"){atk(4);op.healBlocked=true;}
     else if(c.id==="thunder"){
-      if(S.lastPlayerCard==="thunder"){log("雷霆貫穿：連續攻擊不能使用。");return;}
+      if(S.player.previousCard==="thunder"){log("雷霆貫穿：連續攻擊不能使用。");return;}
       atk(7);
     }
     else if(c.id==="backstab")atk(S.enemyUsedSkill||S.enemyHand.length<9?5:2);
@@ -793,10 +802,9 @@ function cardVisual(c){
   const h=CARD_HUE[c.id]??210;
   const glyph=CARD_GLYPH[c.id]||TYPE_ICON[c.type]||"✦";
   const src=CARD_ART[c.id];
-  const art=src?`,url('${src}')`:"";
   return {
     glyph,
-    style:`background-image:radial-gradient(circle at 50% 30%,hsla(${h},95%,72%,.50),transparent 27%),linear-gradient(145deg,hsla(${h},72%,22%,.96),hsla(${(h+45)%360},70%,8%,.98))${art}`
+    style:`--card-h:${h};--card-art:${src?`url('${src}')`:'none'};background-image:linear-gradient(180deg,rgba(4,7,16,.06),rgba(4,7,16,.72)),url('${src}'),radial-gradient(circle at 50% 30%,hsla(${h},95%,72%,.50),transparent 27%),linear-gradient(145deg,hsla(${h},72%,22%,.96),hsla(${(h+45)%360},70%,8%,.98));background-size:cover;background-position:center;`
   };
 }
 
@@ -894,12 +902,25 @@ function playEffect(type,name,info={}){
   },1050);
 }
 
+/* ========================= DYNAMIC ARENA ========================= */
+function arenaFor(c){
+  const id=c?.id||"";
+  if(["nezha","wukong","erlang","nuwa","chang_e","houyi","jingwei","zhongkui"].includes(id)) return "assets/backgrounds/japan.webp";
+  if(["amaterasu","susanoo","tsukuyomi","izanagi"].includes(id)) return "assets/backgrounds/moon.webp";
+  if(["hanuman","shiva","garuda"].includes(id)) return "assets/backgrounds/fire.webp";
+  if(["zeus","athena","hades","medusa","heracles"].includes(id)) return "assets/backgrounds/light.webp";
+  if(["loki","thor","odin","freya"].includes(id)) return "assets/backgrounds/frost.webp";
+  if(["anubis","ra","osiris"].includes(id)) return "assets/backgrounds/sun.webp";
+  if(["morrigan","gilgamesh","cernunnos"].includes(id)) return "assets/backgrounds/void.webp";
+  return "assets/backgrounds/main.webp";
+}
+
 /* ========================= BATTLE UI ========================= */
 
 function battle(){
   const p=S.player,e=S.enemy;
   app.innerHTML=`
-  <main class="battle v7-battle">
+  <main class="battle v7-battle" style="--arena-url:url('${arenaFor(p)}')">
     <div class="battle-backdrop"></div><div class="battle-veil"></div>
 
     <div class="toolbar">

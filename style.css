@@ -104,7 +104,7 @@ button:disabled{
   z-index:0;
   background:
     linear-gradient(90deg,rgba(4,6,15,.20),rgba(4,6,15,.02) 50%,rgba(4,6,15,.20)),
-    url('assets/characters-collage.jpg') center/cover no-repeat;
+    url('assets/characters-collage.webp') center/cover no-repeat;
   filter:saturate(1.08) contrast(1.04);
   transform:scale(1.025);
 }
@@ -196,7 +196,7 @@ button:disabled{
   background:
     radial-gradient(circle at 50% 45%,rgba(245,205,105,.14),transparent 28%),
     linear-gradient(90deg,rgba(5,7,17,.45),rgba(5,7,17,.12),rgba(5,7,17,.45)),
-    url('assets/characters-collage.jpg') center/cover no-repeat;
+    url('assets/characters-collage.webp') center/cover no-repeat;
 }
 
 .v7-draw .draw-content{
@@ -427,7 +427,7 @@ button:disabled{
   z-index:0;
   background:
     linear-gradient(180deg,rgba(3,5,12,.20),rgba(3,5,12,.58)),
-    url('assets/battle-arena.jpg') center/cover no-repeat;
+    url('assets/battle-arena.webp') center/cover no-repeat;
 }
 
 .v7-battle>.toolbar,
@@ -953,177 +953,80 @@ button:disabled{
 }
 
 /* =========================================================
-   FINAL CARD-BATTLE HAND LAYOUT
+   COMPLETE PACK VISUAL POLISH
    ========================================================= */
-
-/* 戰鬥區域重新分配：角色在上、操作與手牌在下 */
-.v7-battle{
-  min-height:100vh !important;
-  padding-bottom:24px !important;
+.v7-battle .battle-backdrop{
+  background-image:var(--arena-url),url('assets/battle-arena.webp') !important;
+  background-position:center !important;
+  background-size:cover !important;
+  filter:saturate(1.12) contrast(1.05);
+  transition:filter .6s ease,transform .6s ease;
 }
 
-.v7-battle .board{
-  width:min(1180px,100%) !important;
-  margin:0 auto !important;
-  display:flex !important;
-  flex-direction:column !important;
+.v7-battle .battle-veil{
+  background:radial-gradient(circle at 50% 30%,rgba(92,74,170,.18),transparent 35%),linear-gradient(180deg,rgba(3,5,12,.22),rgba(3,4,10,.78)) !important;
 }
 
-/* 手牌：橫向、置中、貼近畫面底部 */
-.v7-battle .hand{
-  width:100% !important;
-  min-height:270px !important;
-  display:flex !important;
-  flex-direction:row !important;
-  flex-wrap:nowrap !important;
-  justify-content:center !important;
-  align-items:flex-end !important;
-  gap:0 !important;
-  overflow-x:auto !important;
-  overflow-y:visible !important;
-  padding:28px 24px 8px !important;
+.v7-battle .fighter{
+  transition:transform .18s ease,filter .25s ease,box-shadow .25s ease;
+}
+/* Enemy side remains readable; only the artwork may use a mirrored composition if desired. */
+
+.v7-battle .card-illustration::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(125deg,transparent 35%,rgba(255,255,255,.25) 48%,transparent 61%);
+  transform:translateX(-130%);
+  transition:transform .55s ease;
+}
+.v7-battle .card:hover .card-illustration::after{transform:translateX(130%)}
+
+.fx-layer .cast-card{
+  position:relative;
+  overflow:hidden;
+}
+.fx-layer .cast-card::before,
+.fx-layer .fx-burst::before{
+  content:"";
+  position:absolute;
+  width:260px;height:260px;
+  border-radius:50%;
+  border:1px solid rgba(245,215,120,.38);
+  box-shadow:0 0 60px rgba(245,215,120,.18),inset 0 0 60px rgba(245,215,120,.12);
+  animation:fxOrbit 1s linear infinite;
 }
 
-/* 每張牌像真正卡牌遊戲的手牌 */
-.v7-battle .hand .card{
-  flex:0 0 175px !important;
-  width:175px !important;
-  min-width:175px !important;
-  height:255px !important;
-  min-height:255px !important;
-  margin-left:-18px !important;
-  transform-origin:center bottom !important;
-  transition:
-    transform .18s ease,
-    margin .18s ease,
-    box-shadow .18s ease,
-    z-index .18s ease !important;
+@keyframes fxOrbit{to{transform:rotate(360deg) scale(1.08)}}
+
+.fx-burst.slash{color:#ffbd78;background:radial-gradient(circle,rgba(255,70,70,.25),transparent 65%)}
+.fx-burst.heal{color:#7dffc0;background:radial-gradient(circle,rgba(55,255,150,.25),transparent 65%)}
+.fx-burst.ward{color:#8fd7ff;background:radial-gradient(circle,rgba(70,170,255,.25),transparent 65%)}
+.fx-burst.curse{color:#db91ff;background:radial-gradient(circle,rgba(170,60,255,.25),transparent 65%)}
+.fx-burst.mana{color:#ffd56b;background:radial-gradient(circle,rgba(255,190,50,.25),transparent 65%)}
+.fx-burst.ultimate{color:#fff1a6;background:radial-gradient(circle,rgba(255,200,70,.34),transparent 65%)}
+
+.damage-pop b{
+  font-size:76px !important;
+  text-shadow:0 0 22px rgba(255,70,70,.85),0 4px 16px #000;
 }
 
-/* 第一張不要負 margin */
-.v7-battle .hand .card:first-child{
-  margin-left:0 !important;
+.full-effect{
+  position:relative;
+  text-align:center;
+  padding:32px 56px;
+  min-width:320px;
+  border:1px solid rgba(239,208,122,.72);
+  border-radius:22px;
+  background:radial-gradient(circle,rgba(50,38,90,.95),rgba(4,6,14,.97) 70%);
+  box-shadow:0 0 90px rgba(182,125,255,.32),inset 0 0 45px rgba(255,210,100,.08);
+  animation:fullFx .85s ease both;
 }
+.full-effect-icon{font-size:70px;filter:drop-shadow(0 0 24px currentColor)}
+.full-effect strong{display:block;font-size:30px;color:#ffe7a1;margin-top:4px}
+.full-effect small{display:block;margin-top:6px;color:#d6cfbf;font-size:14px}
+@keyframes fullFx{0%{opacity:0;transform:scale(.55);filter:blur(8px)}25%{opacity:1;transform:scale(1.08);filter:blur(0)}100%{opacity:0;transform:scale(1.02)}}
 
-/* 滑過去時往上浮、稍微放大 */
-.v7-battle .hand .card:hover:not(.disabled){
-  transform:translateY(-28px) scale(1.06) !important;
-  margin-left:0 !important;
-  margin-right:18px !important;
-  z-index:20 !important;
-}
-
-/* 卡牌圖片比例 */
-.v7-battle .hand .card-illustration{
-  height:118px !important;
-  margin:7px 0 9px !important;
-}
-
-/* 卡牌文字縮小，讓整張牌更像實體卡 */
-.v7-battle .hand .card h3{
-  font-size:16px !important;
-  margin:5px 0 !important;
-}
-
-.v7-battle .hand .card p{
-  font-size:11px !important;
-  line-height:1.45 !important;
-}
-
-/* 神力與結束回合區 */
-.v7-battle .center-actions{
-  order:2 !important;
-  flex:0 0 auto !important;
-}
-
-/* 技能區放在手牌上面 */
-.v7-battle .skill{
-  order:1 !important;
-  flex:0 0 auto !important;
-}
-
-/* log 最上面 */
-.v7-battle .log{
-  order:0 !important;
-}
-
-/* 手牌放最下面 */
-.v7-battle .hand{
-  order:3 !important;
-}
-
-/* 電腦版讓手牌更接近一般卡牌遊戲的「手牌扇形」 */
 @media(min-width:901px){
-  .v7-battle .hand .card:nth-child(1){transform:rotate(-6deg) translateY(8px);}
-  .v7-battle .hand .card:nth-child(2){transform:rotate(-4deg) translateY(4px);}
-  .v7-battle .hand .card:nth-child(3){transform:rotate(-2deg);}
-  .v7-battle .hand .card:nth-child(4){transform:rotate(0deg);}
-  .v7-battle .hand .card:nth-child(5){transform:rotate(2deg);}
-  .v7-battle .hand .card:nth-child(6){transform:rotate(4deg) translateY(4px);}
-  .v7-battle .hand .card:nth-child(7){transform:rotate(6deg) translateY(8px);}
-}
-
-/* 手機：維持橫向滑動，不再變成直排 */
-@media(max-width:900px){
-  .v7-battle .hand{
-    justify-content:flex-start !important;
-    min-height:250px !important;
-    padding:24px 18px 8px !important;
-  }
-
-  .v7-battle .hand .card{
-    flex:0 0 165px !important;
-    width:165px !important;
-    min-width:165px !important;
-    height:240px !important;
-    min-height:240px !important;
-    margin-left:-12px !important;
-  }
-
-  .v7-battle .hand .card:first-child{
-    margin-left:0 !important;
-  }
-}
-
-/* 抽卡頁：確保命運卡真正位於畫面中央 */
-.v7-draw .draw-content{
-  min-height:100vh !important;
-  width:100% !important;
-  display:flex !important;
-  flex-direction:column !important;
-  align-items:center !important;
-  justify-content:center !important;
-}
-
-.v7-draw .fate-stage{
-  width:min(440px,92vw) !important;
-  min-height:440px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-}
-
-.v7-draw .fate-card{
-  width:100% !important;
-  min-height:390px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-}
-
-/* 未翻牌時的命運符號 */
-.v7-draw .fate-card:not(.revealed){
-  background:
-    radial-gradient(circle,#30274d 0,#12172a 48%,#080b15 100%) !important;
-}
-
-.v7-draw .fate-card:not(.revealed) .fate-sigil{
-  display:block !important;
-}
-
-/* 抽卡按鈕 */
-.v7-draw #drawButton{
-  position:relative !important;
-  z-index:20 !important;
-  margin-top:6px !important;
+  .v7-battle .hand .card{flex-basis:182px!important;width:182px!important;min-width:182px!important}
 }
